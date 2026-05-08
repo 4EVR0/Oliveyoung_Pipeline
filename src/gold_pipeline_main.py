@@ -11,10 +11,14 @@ Gold 파이프라인 오케스트레이션 진입점
 
 import logging
 
+from oliveyoung_common.logging import setup_logging
+
 from config.settings import OliveyoungIceberg
 from gold_pipeline.cdc import compute_change_log
 from gold_pipeline.write_gold import write_gold_change_log, write_gold_ingredient_frequency
 from models.batch_metadata import create_batch_metadata
+
+setup_logging("iceberg-gold")
 
 logging.basicConfig(
     level=logging.INFO,
