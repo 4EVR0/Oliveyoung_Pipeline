@@ -4,3 +4,4 @@ CLAUDE.md
 docker-volume/
 .env
 .omc/
+.claude/

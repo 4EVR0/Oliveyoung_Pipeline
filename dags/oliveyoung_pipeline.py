@@ -1,8 +1,23 @@
+import os
 from datetime import datetime
 from airflow import DAG
+from airflow.operators.bash import BashOperator
 from airflow.providers.docker.operators.docker import DockerOperator
 
-IMAGE = "oliveyoung-pipeline:latest"
+ECR_REGISTRY = os.environ.get("ECR_REGISTRY", "")
+IMAGE = f"{ECR_REGISTRY}/evr0/iceberg-pipeline:latest"
+
+COMMON = dict(
+    docker_url="unix://var/run/docker.sock",
+    network_mode="host",
+    auto_remove="success",
+    mount_tmp_dir=False,
+    environment={
+        "AWS_DEFAULT_REGION": "ap-northeast-2",
+        "AWS_ACCESS_KEY_ID": os.environ.get("AWS_ACCESS_KEY_ID", ""),
+        "AWS_SECRET_ACCESS_KEY": os.environ.get("AWS_SECRET_ACCESS_KEY", ""),
+    },
+)
 
 with DAG(
     dag_id="oliveyoung_bronze_to_silver",
@@ -12,31 +27,33 @@ with DAG(
     tags=["oliveyoung", "etl"],
 ) as dag:
 
+    ecr_login = BashOperator(
+        task_id="ecr_login",
+        bash_command=(
+            "aws ecr get-login-password --region ap-northeast-2 "
+            "| docker login --username AWS --password-stdin $ECR_REGISTRY"
+        ),
+    )
+
     sync_reference = DockerOperator(
         task_id="sync_reference_data",
         image=IMAGE,
         command="sync_reference",
-        network_mode="host",
-        auto_remove="success",
-        environment={"AWS_DEFAULT_REGION": "ap-northeast-2"},
+        **COMMON,
     )
 
     bronze_to_silver = DockerOperator(
         task_id="bronze_to_silver",
         image=IMAGE,
         command="bronze_to_silver",
-        network_mode="host",
-        auto_remove="success",
-        environment={"AWS_DEFAULT_REGION": "ap-northeast-2"},
+        **COMMON,
     )
 
     silver_to_gold = DockerOperator(
         task_id="silver_to_gold",
         image=IMAGE,
         command="silver_to_gold",
-        network_mode="host",
-        auto_remove="success",
-        environment={"AWS_DEFAULT_REGION": "ap-northeast-2"},
+        **COMMON,
     )
 
-    sync_reference >> bronze_to_silver >> silver_to_gold
+    ecr_login >> sync_reference >> bronze_to_silver >> silver_to_gold
