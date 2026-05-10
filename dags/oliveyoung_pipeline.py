@@ -11,6 +11,7 @@ COMMON = dict(
     network_mode="host",
     auto_remove="success",
     mount_tmp_dir=False,
+    force_pull=True,
     environment={
         "AWS_DEFAULT_REGION": "ap-northeast-2",
         "AWS_ACCESS_KEY_ID": os.environ.get("AWS_ACCESS_KEY_ID", ""),
