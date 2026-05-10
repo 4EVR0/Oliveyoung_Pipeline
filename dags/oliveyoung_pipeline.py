@@ -1,7 +1,6 @@
 import os
 from datetime import datetime
 from airflow import DAG
-from airflow.operators.bash import BashOperator
 from airflow.providers.docker.operators.docker import DockerOperator
 
 ECR_REGISTRY = os.environ.get("ECR_REGISTRY", "")
@@ -26,14 +25,6 @@ with DAG(
     catchup=False,
     tags=["oliveyoung", "etl"],
 ) as dag:
-
-    ecr_login = BashOperator(
-        task_id="ecr_login",
-        bash_command=(
-            "aws ecr get-login-password --region ap-northeast-2 "
-            "| docker login --username AWS --password-stdin $ECR_REGISTRY"
-        ),
-    )
 
     sync_reference = DockerOperator(
         task_id="sync_reference_data",
@@ -63,4 +54,4 @@ with DAG(
         **COMMON,
     )
 
-    ecr_login >> sync_reference >> bronze_to_silver >> silver_to_gold >> silver_to_neo4j_csv
+    sync_reference >> bronze_to_silver >> silver_to_gold >> silver_to_neo4j_csv
