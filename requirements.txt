@@ -2,7 +2,6 @@ pandas
 pyahocorasick
 pyiceberg
 duckdb
-boto3==1.35.84
-aiobotocore==2.15.1
+boto3
 pyarrow
-s3fs==2024.10.0
+s3fs
