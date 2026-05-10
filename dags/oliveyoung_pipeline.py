@@ -56,4 +56,11 @@ with DAG(
         **COMMON,
     )
 
-    ecr_login >> sync_reference >> bronze_to_silver >> silver_to_gold
+    silver_to_neo4j_csv = DockerOperator(
+        task_id="silver_to_neo4j_csv",
+        image=IMAGE,
+        command="silver_to_neo4j_csv",
+        **COMMON,
+    )
+
+    ecr_login >> sync_reference >> bronze_to_silver >> silver_to_gold >> silver_to_neo4j_csv
