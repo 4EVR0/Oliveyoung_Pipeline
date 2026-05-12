@@ -19,8 +19,10 @@ Gold (Iceberg — oliveyoung_db)
  ├── gold_product_ingredients     ← unique 성분 × INCI 메타데이터 (overwrite)
  ├── gold_ingredient_frequency    ← 카테고리별 Top 50 성분 (append)
  └── gold_product_change_log      ← CDC 변경 이력 (append)
-    ↓
-CSV 내보내기 (S3 data_csv/)
+    ↓  neo4j-admin import 포맷 CSV
+Neo4j CSV (S3 gold/neo4j/oliveyoung/)
+ ├── nodes/Product/{run_id}/      ← 제품 노드
+ └── rels/CONTAINS/{run_id}/      ← Product → Ingredient 관계
 ```
 
 ### 처리 흐름
@@ -33,6 +35,7 @@ CSV 내보내기 (S3 data_csv/)
 6. **Join** — Silver unique 성분 × `inci_db.gold_kcia_cosing_ingredients_current` LEFT JOIN → `gold_product_ingredients`
 7. **Aggregate** — 카테고리별 성분 빈도 집계 → `gold_ingredient_frequency`
 8. **Export** — Iceberg(Parquet) + S3 CSV 동시 저장
+9. **Neo4j CSV** — Silver × Gold 조인으로 Product 노드·CONTAINS 관계 CSV → S3 (`gold/neo4j/`)
 
 ---
 
@@ -63,7 +66,10 @@ Iceberg_pipeline/
 │   │   ├── pipeline.py                # 오케스트레이션
 │   │   ├── cleaner.py                 # 데이터 정제 로직
 │   │   └── ac_builder.py             # Aho-Corasick 오토마타 빌더
-│   └── silver_to_gold/               # Silver → Gold ETL
+│   ├── silver_to_gold/               # Silver → Gold ETL
+│   │   ├── main.py                    # 실행 진입점
+│   │   └── pipeline.py               # 오케스트레이션
+│   └── silver_to_neo4j_csv/          # Silver → Neo4j CSV
 │       ├── main.py                    # 실행 진입점
 │       └── pipeline.py               # 오케스트레이션
 ├── reference_pipeline/                # Reference 데이터 관리
@@ -75,12 +81,13 @@ Iceberg_pipeline/
 │   ├── create_silver.py
 │   ├── create_category_master.py
 │   └── write_silver.py
-├── gold_pipeline/                     # Gold Iceberg 테이블 관리
+├── gold_pipeline/                     # Gold Iceberg 테이블 관리 + Neo4j CSV 작성
 │   ├── schemas.py
 │   ├── create_gold_tables.py
 │   ├── create_gold_product_ingredients.py
 │   ├── write_gold.py
-│   └── write_gold_product_ingredients.py
+│   ├── write_gold_product_ingredients.py
+│   └── write_neo4j_csv.py             # Neo4j 노드·관계 CSV 빌더 (Product, CONTAINS)
 └── jupyter/                           # 탐색용 노트북
 ```
 
@@ -168,6 +175,9 @@ docker run --network host oliveyoung-pipeline bronze_to_silver
 
 # Silver → Gold
 docker run --network host oliveyoung-pipeline silver_to_gold
+
+# Silver → Neo4j CSV
+docker run --network host oliveyoung-pipeline silver_to_neo4j_csv
 ```
 
 전체 파이프라인 순서:
@@ -176,6 +186,7 @@ docker run --network host oliveyoung-pipeline silver_to_gold
 docker run --network host oliveyoung-pipeline sync_reference
 docker run --network host oliveyoung-pipeline bronze_to_silver
 docker run --network host oliveyoung-pipeline silver_to_gold
+docker run --network host oliveyoung-pipeline silver_to_neo4j_csv
 ```
 
 ---
@@ -185,7 +196,7 @@ docker run --network host oliveyoung-pipeline silver_to_gold
 `dags/oliveyoung_pipeline.py`에 DockerOperator 기반 DAG가 정의되어 있습니다.
 
 ```
-sync_reference_data  →  bronze_to_silver  →  silver_to_gold
+sync_reference_data  →  bronze_to_silver  →  silver_to_gold  →  silver_to_neo4j_csv
 ```
 
 - `schedule=None` — 크롤링 DAG 완료 후 `TriggerDagRunOperator`로 트리거됩니다.
@@ -239,6 +250,33 @@ trigger = TriggerDagRunOperator(
 ### Silver Error DLQ (`oliveyoung_silver_error`)
 
 **오류 타입**: `INCOMPLETE_DATA_REJECTED` · `OPTION_BUNDLE_REJECTED` · `INVALID_METADATA_REJECTED` · `HETEROGENEOUS_BUNDLE_REJECTED` · `DUPLICATE_PRODUCT_REJECTED` · `UNMAPPED_RESIDUAL` · `HIDDEN_BUNDLE_REJECTED`
+
+---
+
+## Neo4j CSV 출력 형식
+
+`silver_to_neo4j_csv` 파이프라인은 `neo4j-admin import` 포맷의 CSV를 S3에 업로드합니다.
+
+**S3 경로 규칙:**
+```
+s3://oliveyoung-crawl-data/gold/neo4j/oliveyoung/{nodes|rels}/{Label}/{run_id}/
+├── header.csv       # neo4j-admin 헤더 (1행)
+└── part-00000.csv   # 데이터 행
+```
+
+### 노드
+
+| 파일 | 헤더 | 데이터 소스 |
+|------|------|------------|
+| `nodes/Product/` | `product_id:ID(Product),product_name,brand,category` | `oliveyoung_silver_current` |
+
+### 관계
+
+| 파일 | 헤더 | 데이터 소스 |
+|------|------|------------|
+| `rels/CONTAINS/` | `:START_ID(Product),:END_ID(Ingredient)` | `silver_current` × `gold_product_ingredients` |
+
+CONTAINS 관계는 `product_ingredients`(한국어 성분명)를 UNNEST해 `gold_product_ingredients`와 INNER JOIN, INCI 매핑이 없는 성분은 제외합니다.
 
 ---
 
