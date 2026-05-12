@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import logging
 
+import duckdb
 import pandas as pd
 
 from oliveyoung_common.batch import create_batch_metadata
@@ -84,3 +85,69 @@ def write_product_node_csv() -> None:
             upserted_nodes=len(df),
         )
         logger.info(f"Product 노드 {len(df)}건 업로드: s3://{S3.BUCKET}/{prefix}/")
+
+
+# ==========================================
+# CONTAINS 관계 (Product → Ingredient)
+# ==========================================
+
+_CONTAINS_QUERY = """
+SELECT DISTINCT s.product_id, g.inci_name
+FROM (
+    SELECT product_id, UNNEST(product_ingredients) AS ingredient_name
+    FROM silver_arrow
+    WHERE product_id IS NOT NULL AND product_ingredients IS NOT NULL
+) s
+INNER JOIN gold_arrow g ON s.ingredient_name = g.ingredient_name
+WHERE g.inci_name IS NOT NULL
+ORDER BY s.product_id, g.inci_name
+"""
+
+
+def write_contains_rel_csv() -> None:
+    """silver_current × gold_product_ingredients → CONTAINS 관계 CSV → S3
+    (gold/neo4j/oliveyoung/rels/CONTAINS/{run_id}/)
+    """
+    batch = create_batch_metadata(f"{PIPELINE_NAME}_neo4j")
+    run_id = batch.run_id
+
+    with job_unit(logger, job="silver_to_neo4j_csv.contains", run_id=run_id):
+        catalog = OliveyoungIceberg.get_catalog()
+
+        silver_arrow = catalog.load_table(OliveyoungIceberg.SILVER_CURRENT_TABLE).scan(
+            selected_fields=("product_id", "product_ingredients")
+        ).to_arrow()
+
+        gold_arrow = catalog.load_table(OliveyoungIceberg.GOLD_PRODUCT_INGREDIENTS_TABLE).scan(
+            selected_fields=("ingredient_name", "inci_name")
+        ).to_arrow()
+
+        con = duckdb.connect()
+        con.register("silver_arrow", silver_arrow)
+        con.register("gold_arrow", gold_arrow)
+        df = con.execute(_CONTAINS_QUERY).df()
+        con.close()
+
+        if df.empty:
+            logger.warning("CONTAINS 관계 데이터 없음 — 업로드 skip")
+            return
+
+        header_csv = ":START_ID(Product),:END_ID(Ingredient)"
+        data_csv   = df.to_csv(index=False, header=False)
+
+        prefix = neo4j_csv_prefix(
+            pipeline=PIPELINE_NAME,
+            kind="rels",
+            name="CONTAINS",
+            run_id=run_id,
+        )
+        upload_csv_to_s3(header_csv, S3.BUCKET, f"{prefix}/header.csv",     S3.REGION)
+        upload_csv_to_s3(data_csv,   S3.BUCKET, f"{prefix}/part-00000.csv", S3.REGION)
+
+        log_process_summary(
+            logger,
+            job="silver_to_neo4j_csv.contains",
+            run_id=run_id,
+            upserted_nodes=len(df),
+        )
+        logger.info(f"CONTAINS 관계 {len(df)}건 업로드: s3://{S3.BUCKET}/{prefix}/")
