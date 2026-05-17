@@ -4,7 +4,7 @@ from airflow import DAG
 from airflow.providers.docker.operators.docker import DockerOperator
 
 ECR_REGISTRY = os.environ.get("ECR_REGISTRY", "")
-IMAGE = f"{ECR_REGISTRY}/evr0/iceberg-pipeline:latest"
+IMAGE = f"{ECR_REGISTRY}/evr0/oliveyoung-pipeline:latest"
 
 COMMON = dict(
     docker_url="unix://var/run/docker.sock",
