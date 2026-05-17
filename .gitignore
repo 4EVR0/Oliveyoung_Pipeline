@@ -5,3 +5,4 @@ docker-volume/
 .env
 .omc/
 .claude/
+docs/
