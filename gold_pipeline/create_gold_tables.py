@@ -11,6 +11,7 @@ Gold 레이어 Iceberg 테이블 초기화 스크립트
 
 import logging
 
+from oliveyoung_common.logging import setup_logging
 from config.settings import OliveyoungIceberg, S3
 from gold_pipeline.schemas import (
     GOLD_INGREDIENT_FREQUENCY_PARTITION,
@@ -21,7 +22,7 @@ from gold_pipeline.schemas import (
     GOLD_PRODUCT_CHANGE_LOG_SORT,
 )
 
-logging.basicConfig(level=logging.INFO)
+setup_logging("iceberg-create-gold-tables")
 logger = logging.getLogger(__name__)
 
 

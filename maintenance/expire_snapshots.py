@@ -144,11 +144,9 @@ def run_maintenance(older_than_days: int = 30, dry_run: bool = False) -> None:
 # ==========================================
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s  %(levelname)-8s  %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
+    from oliveyoung_common.logging import setup_logging
+
+    setup_logging("iceberg-expire-snapshots")
 
     parser = argparse.ArgumentParser(
         description="Iceberg 스냅샷 만료 및 orphan 파일 정리"

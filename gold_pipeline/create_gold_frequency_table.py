@@ -8,9 +8,10 @@ from pyiceberg.schema import Schema
 from pyiceberg.types import StringType, IntegerType, LongType, NestedField
 import logging
 
+from oliveyoung_common.logging import setup_logging
 from oliveyoung_common import s3_paths
 
-logging.basicConfig(level=logging.INFO)
+setup_logging("iceberg-create-gold-frequency-table")
 logger = logging.getLogger(__name__)
 
 def create_gold_table():
