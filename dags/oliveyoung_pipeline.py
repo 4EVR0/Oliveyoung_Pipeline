@@ -16,6 +16,8 @@ COMMON = dict(
         "AWS_DEFAULT_REGION": "ap-northeast-2",
         "AWS_ACCESS_KEY_ID": os.environ.get("AWS_ACCESS_KEY_ID", ""),
         "AWS_SECRET_ACCESS_KEY": os.environ.get("AWS_SECRET_ACCESS_KEY", ""),
+        "LOG_FORMAT": "json",
+        "LOG_LEVEL": "INFO",
     },
 )
 

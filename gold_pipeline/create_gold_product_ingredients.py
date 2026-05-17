@@ -11,11 +11,12 @@ if _PROJECT_ROOT not in sys.path:
 
 import logging
 
+from oliveyoung_common.logging import setup_logging
 from pyiceberg.catalog.glue import GlueCatalog
 
 from gold_pipeline.schemas import GOLD_PRODUCT_INGREDIENTS_SCHEMA
 
-logging.basicConfig(level=logging.INFO)
+setup_logging("iceberg-create-gold-product-ingredients")
 logger = logging.getLogger(__name__)
 
 
