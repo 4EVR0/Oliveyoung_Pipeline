@@ -1,0 +1,28 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::973972497926:role/GitHubActionsSSMRole
+          aws-region: ap-northeast-2
+
+      - name: Deploy via SSM
+        run: |
+          aws ssm send-command \
+            --instance-id i-0624b5122e160bea3 \
+            --document-name "AWS-RunShellScript" \
+            --parameters 'commands=["git -C /home/airflow/pipelines/Oliveyoung_Pipeline pull", "git -C /home/airflow/pipelines/Oliveyoung_Pipeline submodule update --remote"]' \
+            --region ap-northeast-2
