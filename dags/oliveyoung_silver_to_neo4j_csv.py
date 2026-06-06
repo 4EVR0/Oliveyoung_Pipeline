@@ -22,32 +22,16 @@ COMMON = dict(
 )
 
 with DAG(
-    dag_id="oliveyoung_pipeline",
-    schedule=None,  # 크롤링 DAG의 TriggerDagRunOperator로 실행
+    dag_id="oliveyoung_silver_to_neo4j_csv",
+    schedule=None,  # 초기 적재용 — 필요 시 수동 트리거
     start_date=datetime(2026, 1, 1),
     catchup=False,
-    tags=["oliveyoung", "etl"],
+    tags=["oliveyoung", "etl", "neo4j"],
 ) as dag:
 
-    sync_reference = DockerOperator(
-        task_id="sync_reference_data",
+    silver_to_neo4j_csv = DockerOperator(
+        task_id="silver_to_neo4j_csv",
         image=IMAGE,
-        command="sync_reference",
+        command="silver_to_neo4j_csv",
         **COMMON,
     )
-
-    bronze_to_silver = DockerOperator(
-        task_id="bronze_to_silver",
-        image=IMAGE,
-        command="bronze_to_silver",
-        **COMMON,
-    )
-
-    silver_to_gold = DockerOperator(
-        task_id="silver_to_gold",
-        image=IMAGE,
-        command="silver_to_gold",
-        **COMMON,
-    )
-
-    sync_reference >> bronze_to_silver >> silver_to_gold
