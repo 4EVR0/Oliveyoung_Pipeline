@@ -47,6 +47,18 @@ def _build_arrow(df: pd.DataFrame, table) -> pa.Table:
             lambda v: [str(x) for x in v] if isinstance(v, list) else None
         )
 
+    # map<string, map<string, string>> 정규화
+    if "review_stats" in work_df.columns:
+        def _normalize_review_stats(v):
+            if not isinstance(v, dict):
+                return None
+            return {
+                str(k): {str(ik): str(iv) for ik, iv in inner.items()}
+                if isinstance(inner, dict) else {}
+                for k, inner in v.items()
+            }
+        work_df["review_stats"] = work_df["review_stats"].apply(_normalize_review_stats)
+
     arrow_dict: dict[str, pa.Array] = {}
     for field in iceberg_arrow_schema:
         col = field.name
@@ -153,7 +165,8 @@ def write_gold_change_log(catalog, change_df: pd.DataFrame) -> None:
 
     new_cnt     = (change_df["change_type"] == "NEW").sum()
     removed_cnt = (change_df["change_type"] == "REMOVED").sum()
+    changed_cnt = (change_df["change_type"] == "CHANGED").sum()
     logger.info(
         f"gold_product_change_log append 완료: "
-        f"NEW={new_cnt}건  REMOVED={removed_cnt}건"
+        f"NEW={new_cnt}건  REMOVED={removed_cnt}건  CHANGED={changed_cnt}건"
     )

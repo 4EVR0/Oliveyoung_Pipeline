@@ -9,9 +9,11 @@ from pyiceberg.schema import Schema
 from pyiceberg.types import (
     NestedField,
     StringType,
+    FloatType,
     IntegerType,
     LongType,
     ListType,
+    MapType,
     TimestamptzType,
 )
 from pyiceberg.partitioning import PartitionSpec, PartitionField
@@ -54,20 +56,35 @@ GOLD_INGREDIENT_FREQUENCY_SORT = SortOrder(
 # change_type 값:
 #   NEW     — 현재 배치에 새로 등장한 product
 #   REMOVED — 이전 배치에 있었으나 현재 배치에서 사라진 product
+#   CHANGED — product_ingredients / rating / review_count / review_stats 변경
+
+# map<string, map<string, string>> — silver 와 동일 구조, field_id 충돌 방지를 위해 200번대 사용
+_CHANGE_LOG_REVIEW_STATS_TYPE = MapType(
+    key_id=201, key_type=StringType(),
+    value_id=202, value_type=MapType(
+        key_id=203, key_type=StringType(),
+        value_id=204, value_type=StringType(),
+        value_required=False,
+    ),
+    value_required=False,
+)
 
 GOLD_PRODUCT_CHANGE_LOG_SCHEMA = Schema(
-    NestedField(1, "batch_date",  TimestamptzType(), required=False),  # 파티션 키
-    NestedField(2, "product_id",  StringType(),      required=True),
-    NestedField(3, "category_id", StringType(),      required=False),
-    NestedField(4, "change_type", StringType(),      required=False),  # NEW | REMOVED
-    NestedField(5, "product_name",    StringType(),  required=False),
-    NestedField(6, "product_brand",   StringType(),  required=False),
+    NestedField(1,  "batch_date",  TimestamptzType(), required=False),  # 파티션 키
+    NestedField(2,  "product_id",  StringType(),      required=True),
+    NestedField(3,  "category_id", StringType(),      required=False),
+    NestedField(4,  "change_type", StringType(),      required=False),  # NEW | REMOVED | CHANGED
+    NestedField(5,  "product_name",    StringType(),  required=False),
+    NestedField(6,  "product_brand",   StringType(),  required=False),
     NestedField(
         7, "product_ingredients",
         ListType(element_id=100, element_type=StringType(), element_required=False),
         required=False,
     ),
-    NestedField(8, "batch_job",   StringType(),      required=False),
+    NestedField(8,  "rating",        FloatType(),                  required=False),
+    NestedField(9,  "review_count",  IntegerType(),                required=False),
+    NestedField(10, "review_stats",  _CHANGE_LOG_REVIEW_STATS_TYPE, required=False),
+    NestedField(11, "batch_job",     StringType(),                 required=False),
 )
 
 # batch_date 일 단위 파티션
