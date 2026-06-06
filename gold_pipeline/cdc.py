@@ -8,6 +8,8 @@ CDC (Change Data Capture) 모듈 — Iceberg 스냅샷 비교 방식
               → append된 레코드 = 이번 배치에 신규 등장한 product
     REMOVED : silver_current의 이전 스냅샷 vs 현재 스냅샷 product_id 집합 비교
               → silver_current는 overwrite라 항상 현재 배치 크기만큼만 읽힘
+    CHANGED : 양쪽 스냅샷에 모두 존재하는 product 중
+              product_ingredients / rating / review_count / review_stats 가 바뀐 것
 
 반환:
     pd.DataFrame | None — 변경 레코드가 없으면 None
@@ -28,8 +30,13 @@ _SELECTED_FIELDS = (
     "product_name",
     "product_brand",
     "product_ingredients",
+    "rating",
+    "review_count",
+    "review_stats",
     "batch_date",
 )
+
+_CHANGE_TRACK_FIELDS = ("product_ingredients", "rating", "review_count", "review_stats")
 
 
 # ==========================================
@@ -92,22 +99,24 @@ def _get_new_products(catalog) -> pd.DataFrame:
 
 
 # ==========================================
-# REMOVED: silver_current 스냅샷 비교
+# REMOVED / CHANGED: silver_current 스냅샷 비교
 # ==========================================
 
-def _get_removed_products(catalog) -> pd.DataFrame:
+def _get_removed_and_changed_products(catalog) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
-    silver_current의 이전 스냅샷과 현재 스냅샷을 비교해
-    사라진 product를 반환합니다.
+    silver_current의 이전/현재 스냅샷을 한 번만 로드해
+    REMOVED(사라진)와 CHANGED(변경된) product를 함께 반환합니다.
 
     silver_current는 배치마다 overwrite되므로 항상 현재 배치 크기만큼만
     읽히고, 전체 history 누적 부담이 없습니다.
+
+    CHANGED 판정 기준: product_ingredients / rating / review_count / review_stats
     """
     table = catalog.load_table(Iceberg.SILVER_CURRENT_TABLE)
 
     result = _latest_two_snapshot_ids(table)
     if result is None:
-        return pd.DataFrame()
+        return pd.DataFrame(), pd.DataFrame()
 
     prev_snapshot_id, curr_snapshot_id = result
 
@@ -124,16 +133,46 @@ def _get_removed_products(catalog) -> pd.DataFrame:
 
     prev_ids = set(prev_df["product_id"].dropna())
     curr_ids = set(curr_df["product_id"].dropna())
+
+    # REMOVED
     removed_ids = prev_ids - curr_ids
-
-    if not removed_ids:
+    if removed_ids:
+        removed_df = prev_df[prev_df["product_id"].isin(removed_ids)].copy()
+        removed_df["change_type"] = "REMOVED"
+        logger.info(f"REMOVED: {len(removed_df)}건")
+    else:
+        removed_df = pd.DataFrame()
         logger.info("REMOVED: 0건")
-        return pd.DataFrame()
 
-    removed_df = prev_df[prev_df["product_id"].isin(removed_ids)].copy()
-    removed_df["change_type"] = "REMOVED"
-    logger.info(f"REMOVED: {len(removed_df)}건")
-    return removed_df
+    # CHANGED: 양쪽에 모두 존재하는 product 중 추적 필드가 달라진 것
+    common_ids = prev_ids & curr_ids
+    changed_df = pd.DataFrame()
+    if common_ids:
+        prev_common = (
+            prev_df[prev_df["product_id"].isin(common_ids)].set_index("product_id")
+        )
+        curr_common = (
+            curr_df[curr_df["product_id"].isin(common_ids)].set_index("product_id")
+        )
+        merged = prev_common.join(curr_common, lsuffix="_prev", rsuffix="_curr")
+
+        change_mask = pd.Series(False, index=merged.index)
+        for field in _CHANGE_TRACK_FIELDS:
+            prev_col, curr_col = f"{field}_prev", f"{field}_curr"
+            if prev_col in merged.columns and curr_col in merged.columns:
+                change_mask |= (
+                    merged[prev_col].apply(str) != merged[curr_col].apply(str)
+                )
+
+        changed_ids = set(merged[change_mask].index)
+        if changed_ids:
+            changed_df = curr_df[curr_df["product_id"].isin(changed_ids)].copy()
+            changed_df["change_type"] = "CHANGED"
+            logger.info(f"CHANGED: {len(changed_df)}건")
+        else:
+            logger.info("CHANGED: 0건")
+
+    return removed_df, changed_df
 
 
 # ==========================================
@@ -152,14 +191,14 @@ def compute_change_log(catalog, batch: BatchMetadata) -> pd.DataFrame | None:
     Returns:
         변경 레코드 DataFrame 또는 변경 없으면 None
     """
-    new_df     = _get_new_products(catalog)
-    removed_df = _get_removed_products(catalog)
+    new_df                   = _get_new_products(catalog)
+    removed_df, changed_df   = _get_removed_and_changed_products(catalog)
 
-    if new_df.empty and removed_df.empty:
+    if new_df.empty and removed_df.empty and changed_df.empty:
         logger.info("변경 레코드 없음 — CDC 건너뜀")
         return None
 
-    change_df = pd.concat([new_df, removed_df], ignore_index=True)
+    change_df = pd.concat([new_df, removed_df, changed_df], ignore_index=True)
     add_batch_metadata(change_df, batch)
 
     output_cols = [
@@ -170,11 +209,15 @@ def compute_change_log(catalog, batch: BatchMetadata) -> pd.DataFrame | None:
         "product_name",
         "product_brand",
         "product_ingredients",
+        "rating",
+        "review_count",
+        "review_stats",
         "batch_job",
     ]
     change_df = change_df[output_cols].reset_index(drop=True)
 
     new_cnt     = (change_df["change_type"] == "NEW").sum()
     removed_cnt = (change_df["change_type"] == "REMOVED").sum()
-    logger.info(f"CDC 완료 — NEW={new_cnt}건  REMOVED={removed_cnt}건")
+    changed_cnt = (change_df["change_type"] == "CHANGED").sum()
+    logger.info(f"CDC 완료 — NEW={new_cnt}건  REMOVED={removed_cnt}건  CHANGED={changed_cnt}건")
     return change_df
