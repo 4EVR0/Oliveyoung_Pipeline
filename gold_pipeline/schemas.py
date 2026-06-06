@@ -104,6 +104,28 @@ GOLD_PRODUCT_CHANGE_LOG_SORT = SortOrder(
 
 
 # ==========================================
+# neo4j_sync_checkpoint
+# ==========================================
+# append 방식 — 배치마다 한 행씩 누적, 최신 행이 현재 체크포인트
+# change_type 값: NEW | REMOVED | CHANGED
+
+NEO4J_SYNC_CHECKPOINT_SCHEMA = Schema(
+    NestedField(1, "batch_job",     StringType(),      required=True),
+    NestedField(2, "synced_at",     TimestamptzType(), required=False),
+    NestedField(3, "new_count",     IntegerType(),     required=False),
+    NestedField(4, "removed_count", IntegerType(),     required=False),
+    NestedField(5, "changed_count", IntegerType(),     required=False),
+)
+
+NEO4J_SYNC_CHECKPOINT_SORT = SortOrder(
+    SortField(
+        source_id=2, transform=IdentityTransform(),
+        direction=SortDirection.DESC, null_order=NullOrder.NULLS_LAST,
+    )
+)
+
+
+# ==========================================
 # gold_product_ingredients
 # ==========================================
 # overwrite 방식 (current 스냅샷) — 파티션 없음
