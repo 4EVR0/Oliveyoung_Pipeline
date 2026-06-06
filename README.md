@@ -193,13 +193,21 @@ docker run --network host oliveyoung-pipeline silver_to_neo4j_csv
 
 ## Airflow 연동
 
-`dags/oliveyoung_pipeline.py`에 DockerOperator 기반 DAG가 정의되어 있습니다.
+DockerOperator 기반 DAG가 두 개로 분리되어 있습니다.
+
+- `dags/oliveyoung_pipeline.py` — 메인 ETL 파이프라인
+- `dags/oliveyoung_silver_to_neo4j_csv.py` — Neo4j CSV 익스포트 (초기 적재용, 독립 DAG)
 
 ```
-sync_reference_data  →  bronze_to_silver  →  silver_to_gold  →  silver_to_neo4j_csv
+oliveyoung_pipeline:
+  sync_reference_data  →  bronze_to_silver  →  silver_to_gold
+
+oliveyoung_silver_to_neo4j_csv:
+  silver_to_neo4j_csv   (초기 적재용 — 필요 시 수동 트리거)
 ```
 
-- `schedule=None` — 크롤링 DAG 완료 후 `TriggerDagRunOperator`로 트리거됩니다.
+- `oliveyoung_pipeline`은 `schedule=None` — 크롤링 DAG 완료 후 `TriggerDagRunOperator`로 트리거됩니다.
+- `oliveyoung_silver_to_neo4j_csv`는 초기 1회 적재 용도로, 트리거 없이 수동으로 실행합니다.
 
 ```python
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
