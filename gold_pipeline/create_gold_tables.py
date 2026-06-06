@@ -20,6 +20,8 @@ from gold_pipeline.schemas import (
     GOLD_PRODUCT_CHANGE_LOG_PARTITION,
     GOLD_PRODUCT_CHANGE_LOG_SCHEMA,
     GOLD_PRODUCT_CHANGE_LOG_SORT,
+    NEO4J_SYNC_CHECKPOINT_SCHEMA,
+    NEO4J_SYNC_CHECKPOINT_SORT,
 )
 
 setup_logging("iceberg-create-gold-tables")
@@ -66,13 +68,24 @@ def create_gold_product_change_log(catalog) -> None:
     )
 
 
+def create_neo4j_sync_checkpoint(catalog) -> None:
+    _create_table(
+        catalog=catalog,
+        identifier=OliveyoungIceberg.NEO4J_SYNC_CHECKPOINT_TABLE,
+        schema=NEO4J_SYNC_CHECKPOINT_SCHEMA,
+        partition=None,
+        sort_order=NEO4J_SYNC_CHECKPOINT_SORT,
+        location=f"{S3.GOLD_PATH}neo4j_sync_checkpoint",
+    )
+
+
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Gold 테이블 초기화")
     parser.add_argument(
         "table",
-        choices=["ingredient_frequency", "product_change_log", "all"],
+        choices=["ingredient_frequency", "product_change_log", "neo4j_sync_checkpoint", "all"],
         help="생성할 테이블 선택 (all: 전체 생성)",
     )
     args = parser.parse_args()
@@ -84,3 +97,6 @@ if __name__ == "__main__":
 
     if args.table in ("product_change_log", "all"):
         create_gold_product_change_log(catalog)
+
+    if args.table in ("neo4j_sync_checkpoint", "all"):
+        create_neo4j_sync_checkpoint(catalog)

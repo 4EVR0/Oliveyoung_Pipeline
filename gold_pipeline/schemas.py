@@ -59,7 +59,7 @@ GOLD_PRODUCT_CHANGE_LOG_SCHEMA = Schema(
     NestedField(1, "batch_date",  TimestamptzType(), required=False),  # 파티션 키
     NestedField(2, "product_id",  StringType(),      required=True),
     NestedField(3, "category_id", StringType(),      required=False),
-    NestedField(4, "change_type", StringType(),      required=False),  # NEW | REMOVED
+    NestedField(4, "change_type", StringType(),      required=False),  # NEW | REMOVED | CHANGED
     NestedField(5, "product_name",    StringType(),  required=False),
     NestedField(6, "product_brand",   StringType(),  required=False),
     NestedField(
@@ -82,6 +82,28 @@ GOLD_PRODUCT_CHANGE_LOG_SORT = SortOrder(
     SortField(
         source_id=4, transform=IdentityTransform(),
         direction=SortDirection.ASC, null_order=NullOrder.NULLS_LAST,
+    )
+)
+
+
+# ==========================================
+# neo4j_sync_checkpoint
+# ==========================================
+# append 방식 — 배치마다 한 행씩 누적, 최신 행이 현재 체크포인트
+# change_type 값: NEW | REMOVED | CHANGED
+
+NEO4J_SYNC_CHECKPOINT_SCHEMA = Schema(
+    NestedField(1, "batch_job",     StringType(),      required=True),
+    NestedField(2, "synced_at",     TimestamptzType(), required=False),
+    NestedField(3, "new_count",     IntegerType(),     required=False),
+    NestedField(4, "removed_count", IntegerType(),     required=False),
+    NestedField(5, "changed_count", IntegerType(),     required=False),
+)
+
+NEO4J_SYNC_CHECKPOINT_SORT = SortOrder(
+    SortField(
+        source_id=2, transform=IdentityTransform(),
+        direction=SortDirection.DESC, null_order=NullOrder.NULLS_LAST,
     )
 )
 
