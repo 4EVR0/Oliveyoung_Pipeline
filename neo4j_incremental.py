@@ -203,6 +203,23 @@ def run() -> None:
         for _, row in changed_rows.iterrows():
             session.execute_write(apply_changed, row.to_dict(), ingredient_mapping)
 
+        session.run(
+            """
+            CREATE (s:SyncLog {
+                batch_job:     $batch_job,
+                synced_at:     datetime($synced_at),
+                new_count:     $new_count,
+                removed_count: $removed_count,
+                changed_count: $changed_count
+            })
+            """,
+            batch_job=latest_batch_job,
+            synced_at=datetime.now(timezone.utc).isoformat(),
+            new_count=len(new_rows),
+            removed_count=len(removed_rows),
+            changed_count=len(changed_rows),
+        )
+
     write_checkpoint(catalog, latest_batch_job, len(new_rows), len(removed_rows), len(changed_rows))
     driver.close()
     logger.info("증분 업데이트 완료")
