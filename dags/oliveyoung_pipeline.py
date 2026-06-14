@@ -50,4 +50,17 @@ with DAG(
         **COMMON,
     )
 
-    sync_reference >> bronze_to_silver >> silver_to_gold
+    neo4j_incremental = DockerOperator(
+        task_id="neo4j_incremental",
+        image=IMAGE,
+        command="neo4j_incremental",
+        **{**COMMON, "environment": {
+            **COMMON["environment"],
+            "ICEBERG_WAREHOUSE": os.environ.get("ICEBERG_WAREHOUSE", ""),
+            "NEO4J_PASSWORD":    os.environ.get("NEO4J_PASSWORD", ""),
+            "NEO4J_BOLT_URI":    os.environ.get("NEO4J_BOLT_URI", "bolt://localhost:7687"),
+            "NEO4J_USER":        os.environ.get("NEO4J_USER", "neo4j"),
+        }},
+    )
+
+    sync_reference >> bronze_to_silver >> silver_to_gold >> neo4j_incremental
