@@ -20,8 +20,11 @@ case "$1" in
   create_gold_product_ingredients)
     python gold_pipeline/create_gold_product_ingredients.py
     ;;
+  neo4j_incremental)
+    python neo4j_incremental.py
+    ;;
   *)
-    echo "Usage: $0 {create_reference_tables|sync_reference|bronze_to_silver|silver_to_gold|silver_to_neo4j_csv|create_gold_product_ingredients}"
+    echo "Usage: $0 {create_reference_tables|sync_reference|bronze_to_silver|silver_to_gold|silver_to_neo4j_csv|create_gold_product_ingredients|neo4j_incremental}"
     exit 1
     ;;
 esac
