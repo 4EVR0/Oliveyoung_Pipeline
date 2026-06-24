@@ -6,3 +6,4 @@ boto3
 pyarrow
 s3fs
 neo4j>=5.0.0
+pyiceberg[pyiceberg-core]
