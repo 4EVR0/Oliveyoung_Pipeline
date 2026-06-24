@@ -4,8 +4,8 @@ CDC (Change Data Capture) 모듈 — Iceberg 스냅샷 비교 방식
 전체 테이블 스캔 없이 Iceberg 스냅샷 메타데이터를 활용해 변경분을 추출합니다.
 
 흐름:
-    NEW     : silver_history의 마지막 2 스냅샷 사이에 추가된 delta 파일만 읽기
-              → append된 레코드 = 이번 배치에 신규 등장한 product
+    NEW     : silver_history의 이전/현재 스냅샷 product_id 집합 비교
+              → 현재 스냅샷에만 있는 product = 이번 배치에 신규 등장한 product
     REMOVED : silver_current의 이전 스냅샷 vs 현재 스냅샷 product_id 집합 비교
               → silver_current는 overwrite라 항상 현재 배치 크기만큼만 읽힘
     CHANGED : 양쪽 스냅샷에 모두 존재하는 product 중
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 _SELECTED_FIELDS = (
     "product_id",
-    "category_id",
+    "category",
     "product_name",
     "product_brand",
     "product_ingredients",
@@ -72,11 +72,11 @@ def _latest_two_snapshot_ids(table) -> tuple[int, int] | None:
 
 def _get_new_products(catalog) -> pd.DataFrame:
     """
-    silver_history의 마지막 두 스냅샷 사이에 추가된 delta 파일만 읽어
+    silver_history의 마지막 두 스냅샷을 비교해
     이번 배치에 신규 등장한 product를 반환합니다.
 
-    pyiceberg incremental scan은 from_snapshot_id ~ to_snapshot_id 구간에
-    추가된 데이터 파일만 읽으므로 전체 history 스캔이 발생하지 않습니다.
+    현재 PyIceberg 버전의 Table.scan()은 incremental scan 인자를 지원하지
+    않으므로 snapshot_id 기준 스캔 후 product_id 차집합으로 판정합니다.
     """
     table = catalog.load_table(Iceberg.SILVER_HISTORY_TABLE)
 
@@ -86,15 +86,28 @@ def _get_new_products(catalog) -> pd.DataFrame:
 
     prev_snapshot_id, curr_snapshot_id = result
 
-    delta_arrow = table.scan(
-        from_snapshot_id=prev_snapshot_id,
-        to_snapshot_id=curr_snapshot_id,
-        selected_fields=_SELECTED_FIELDS,
-    ).to_arrow()
+    prev_df = (
+        table.scan(snapshot_id=prev_snapshot_id, selected_fields=("product_id",))
+        .to_arrow()
+        .to_pandas()
+    )
+    curr_df = (
+        table.scan(snapshot_id=curr_snapshot_id, selected_fields=_SELECTED_FIELDS)
+        .to_arrow()
+        .to_pandas()
+    )
 
-    new_df = delta_arrow.to_pandas()
-    new_df["change_type"] = "NEW"
-    logger.info(f"NEW 후보: {len(new_df)}건 (delta 파일에서 읽음)")
+    prev_ids = set(prev_df["product_id"].dropna())
+    curr_ids = set(curr_df["product_id"].dropna())
+    new_ids = curr_ids - prev_ids
+
+    if new_ids:
+        new_df = curr_df[curr_df["product_id"].isin(new_ids)].copy()
+        new_df["change_type"] = "NEW"
+    else:
+        new_df = pd.DataFrame()
+
+    logger.info(f"NEW: {len(new_df)}건")
     return new_df
 
 
@@ -199,6 +212,8 @@ def compute_change_log(catalog, batch: BatchMetadata) -> pd.DataFrame | None:
         return None
 
     change_df = pd.concat([new_df, removed_df, changed_df], ignore_index=True)
+    if "category_id" not in change_df.columns and "category" in change_df.columns:
+        change_df["category_id"] = change_df["category"]
     add_batch_metadata(change_df, batch)
 
     output_cols = [
@@ -214,6 +229,9 @@ def compute_change_log(catalog, batch: BatchMetadata) -> pd.DataFrame | None:
         "review_stats",
         "batch_job",
     ]
+    for col in output_cols:
+        if col not in change_df.columns:
+            change_df[col] = None
     change_df = change_df[output_cols].reset_index(drop=True)
 
     new_cnt     = (change_df["change_type"] == "NEW").sum()
