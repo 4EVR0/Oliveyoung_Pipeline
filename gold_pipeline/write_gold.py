@@ -10,6 +10,7 @@ import logging
 import duckdb
 import pandas as pd
 import pyarrow as pa
+from pyiceberg.types import StringType, TimestamptzType
 
 from config.settings import OliveyoungIceberg
 from models.batch_metadata import BatchMetadata, add_batch_metadata
@@ -69,12 +70,42 @@ def _build_arrow(df: pd.DataFrame, table) -> pa.Table:
 
 
 # ==========================================
+# Schema evolution
+# ==========================================
+
+def _category_field(table) -> str:
+    existing = {field.name for field in table.schema().fields}
+    if "category" in existing:
+        return "category"
+    if "category_id" in existing:
+        return "category_id"
+    raise ValueError(f"{table.name()} 테이블에 category/category_id 컬럼이 없습니다.")
+
+
+def _load_with_batch_metadata_columns(catalog, identifier: str):
+    table = catalog.load_table(identifier)
+    existing = {field.name for field in table.schema().fields}
+
+    if "batch_job" in existing and "batch_date" in existing:
+        return table
+
+    with table.update_schema() as update:
+        if "batch_job" not in existing:
+            update.add_column("batch_job", StringType())
+        if "batch_date" not in existing:
+            update.add_column("batch_date", TimestamptzType())
+
+    logger.info(f"schema evolve 완료: {identifier} batch_job/batch_date 추가")
+    return catalog.load_table(identifier)
+
+
+# ==========================================
 # gold_ingredient_frequency
 # ==========================================
 
 _INGREDIENT_FREQUENCY_QUERY = r"""
 WITH unnested AS (
-    SELECT category_id, unnest(product_ingredients) AS ingredient_name
+    SELECT {category_column} AS category_id, unnest(product_ingredients) AS ingredient_name
     FROM silver_arrow
 ),
 filtered AS (
@@ -125,18 +156,21 @@ def write_gold_ingredient_frequency(catalog, batch: BatchMetadata) -> None:
     """
     logger.info("silver_current 로드 중...")
     silver_table = catalog.load_table(OliveyoungIceberg.SILVER_CURRENT_TABLE)
-    silver_arrow = silver_table.scan(selected_fields=("category_id", "product_ingredients")).to_arrow()
+    category_column = _category_field(silver_table)
+    silver_arrow = silver_table.scan(selected_fields=(category_column, "product_ingredients")).to_arrow()
 
     con = duckdb.connect()
     con.register("silver_arrow", silver_arrow)
-    gold_df: pd.DataFrame = con.execute(_INGREDIENT_FREQUENCY_QUERY).df()
+    gold_df: pd.DataFrame = con.execute(
+        _INGREDIENT_FREQUENCY_QUERY.format(category_column=category_column)
+    ).df()
     con.close()
 
     logger.info(f"성분 빈도 집계 완료: {len(gold_df)}건")
 
     add_batch_metadata(gold_df, batch)
 
-    gold_table  = catalog.load_table(OliveyoungIceberg.GOLD_INGREDIENT_FREQUENCY_TABLE)
+    gold_table  = _load_with_batch_metadata_columns(catalog, OliveyoungIceberg.GOLD_INGREDIENT_FREQUENCY_TABLE)
     arrow_table = _build_arrow(gold_df, gold_table)
     gold_table.append(arrow_table)
 
