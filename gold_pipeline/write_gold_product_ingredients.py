@@ -21,6 +21,7 @@ from pyiceberg.expressions import AlwaysTrue
 
 from config.settings import OliveyoungIceberg, INCIIceberg
 from gold_pipeline.write_gold import _build_arrow
+from oliveyoung_common.logging import log_dq
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +88,17 @@ def write_gold_product_ingredients(
     matched    = result_df["inci_name"].notna().sum()
     match_rate = matched / total if total else 0
     logger.info(f"unique 성분: {total}건 | INCI 매핑 성공: {matched}건 ({match_rate:.1%})")
+
+    # 정합성 메트릭 — Loki에서 LogQL로 추출 (매핑률 등)
+    log_dq(
+        logger,
+        stage="silver_to_gold",
+        batch_job=batch_job,
+        ingredients_unique=int(total),
+        ingredients_matched=int(matched),
+        ingredients_unmatched=int(total - matched),
+        match_rate=round(float(match_rate), 4),
+    )
 
     result_df["batch_job"]  = batch_job
     result_df["batch_date"] = pd.to_datetime(batch_date, utc=True)
