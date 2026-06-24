@@ -14,6 +14,9 @@ case "$1" in
   silver_to_gold)
     python src/silver_to_gold/main.py
     ;;
+  gold_pipeline)
+    python src/gold_pipeline_main.py
+    ;;
   silver_to_neo4j_csv)
     python src/silver_to_neo4j_csv/main.py
     ;;
@@ -24,7 +27,7 @@ case "$1" in
     python neo4j_incremental.py
     ;;
   *)
-    echo "Usage: $0 {create_reference_tables|sync_reference|bronze_to_silver|silver_to_gold|silver_to_neo4j_csv|create_gold_product_ingredients|neo4j_incremental}"
+    echo "Usage: $0 {create_reference_tables|sync_reference|bronze_to_silver|silver_to_gold|gold_pipeline|silver_to_neo4j_csv|create_gold_product_ingredients|neo4j_incremental}"
     exit 1
     ;;
 esac

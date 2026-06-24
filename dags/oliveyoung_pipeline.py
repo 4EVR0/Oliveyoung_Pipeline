@@ -50,6 +50,13 @@ with DAG(
         **COMMON,
     )
 
+    gold_cdc = DockerOperator(
+        task_id="gold_cdc",
+        image=IMAGE,
+        command="gold_pipeline",
+        **COMMON,
+    )
+
     neo4j_incremental = DockerOperator(
         task_id="neo4j_incremental",
         image=IMAGE,
@@ -63,4 +70,4 @@ with DAG(
         }},
     )
 
-    sync_reference >> bronze_to_silver >> silver_to_gold >> neo4j_incremental
+    sync_reference >> bronze_to_silver >> silver_to_gold >> gold_cdc >> neo4j_incremental
