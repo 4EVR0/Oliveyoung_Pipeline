@@ -2,6 +2,7 @@
 Bronze → Silver 전처리 파이프라인 오케스트레이션 로직
 """
 
+import logging
 import sys
 
 from config.settings import OliveyoungIceberg, INCIIceberg, DuckDB
@@ -17,6 +18,9 @@ from src.bronze_to_silver.ac_builder import (
 )
 from src.bronze_to_silver.cleaner import process_pipeline
 from silver_pipeline.write_silver import write_to_iceberg, write_csv_to_s3
+from oliveyoung_common.logging import log_dq
+
+logger = logging.getLogger(__name__)
 
 
 def load_bronze_data(con):
@@ -103,6 +107,15 @@ def run_pipeline():
         product_name_norm_list = dicts.product_name_norm_list,
     )
     print(f"   정상: {len(silver_df)}건 / 에러: {len(error_df)}건\n")
+
+    # 정합성 메트릭 — 적재 보존(bronze 로드) + 전처리(정상/에러)
+    log_dq(
+        logger,
+        stage="bronze_to_silver",
+        bronze_loaded=len(raw_df),
+        silver_ok=len(silver_df),
+        silver_error=len(error_df),
+    )
 
     print("10. Iceberg write...")
     write_to_iceberg(silver_df, error_df)
