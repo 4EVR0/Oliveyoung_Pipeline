@@ -24,9 +24,8 @@ from models.batch_metadata import BatchMetadata, add_batch_metadata
 
 logger = logging.getLogger(__name__)
 
-_SELECTED_FIELDS = (
+_BASE_SELECTED_FIELDS = (
     "product_id",
-    "category",
     "product_name",
     "product_brand",
     "product_ingredients",
@@ -37,6 +36,25 @@ _SELECTED_FIELDS = (
 )
 
 _CHANGE_TRACK_FIELDS = ("product_ingredients", "rating", "review_count", "review_stats")
+
+
+def _category_field(table) -> str:
+    existing = {field.name for field in table.schema().fields}
+    if "category" in existing:
+        return "category"
+    if "category_id" in existing:
+        return "category_id"
+    raise ValueError(f"{table.name()} 테이블에 category/category_id 컬럼이 없습니다.")
+
+
+def _selected_fields(table) -> tuple[str, ...]:
+    return ("product_id", _category_field(table), *_BASE_SELECTED_FIELDS[1:])
+
+
+def _normalize_category_id(df: pd.DataFrame) -> pd.DataFrame:
+    if "category_id" not in df.columns and "category" in df.columns:
+        df["category_id"] = df["category"]
+    return df
 
 
 # ==========================================
@@ -92,7 +110,7 @@ def _get_new_products(catalog) -> pd.DataFrame:
         .to_pandas()
     )
     curr_df = (
-        table.scan(snapshot_id=curr_snapshot_id, selected_fields=_SELECTED_FIELDS)
+        table.scan(snapshot_id=curr_snapshot_id, selected_fields=_selected_fields(table))
         .to_arrow()
         .to_pandas()
     )
@@ -134,12 +152,12 @@ def _get_removed_and_changed_products(catalog) -> tuple[pd.DataFrame, pd.DataFra
     prev_snapshot_id, curr_snapshot_id = result
 
     prev_df = (
-        table.scan(snapshot_id=prev_snapshot_id, selected_fields=_SELECTED_FIELDS)
+        table.scan(snapshot_id=prev_snapshot_id, selected_fields=_selected_fields(table))
         .to_arrow()
         .to_pandas()
     )
     curr_df = (
-        table.scan(snapshot_id=curr_snapshot_id, selected_fields=_SELECTED_FIELDS)
+        table.scan(snapshot_id=curr_snapshot_id, selected_fields=_selected_fields(table))
         .to_arrow()
         .to_pandas()
     )
@@ -212,8 +230,7 @@ def compute_change_log(catalog, batch: BatchMetadata) -> pd.DataFrame | None:
         return None
 
     change_df = pd.concat([new_df, removed_df, changed_df], ignore_index=True)
-    if "category_id" not in change_df.columns and "category" in change_df.columns:
-        change_df["category_id"] = change_df["category"]
+    _normalize_category_id(change_df)
     add_batch_metadata(change_df, batch)
 
     output_cols = [
