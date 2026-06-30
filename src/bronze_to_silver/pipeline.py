@@ -109,12 +109,16 @@ def run_pipeline():
     print(f"   정상: {len(silver_df)}건 / 에러: {len(error_df)}건\n")
 
     # 정합성 메트릭 — 적재 보존(bronze 로드) + 전처리(정상/에러)
+    # 에러율은 출력 안에서 닫힌 비율(dedup 영향 없음) — 점수판/임계값용
+    processed = len(silver_df) + len(error_df)
+    error_rate = round(len(error_df) / processed, 4) if processed else 0.0
     log_dq(
         logger,
         stage="bronze_to_silver",
         bronze_loaded=len(raw_df),
         silver_ok=len(silver_df),
         silver_error=len(error_df),
+        error_rate=error_rate,
     )
 
     print("10. Iceberg write...")
