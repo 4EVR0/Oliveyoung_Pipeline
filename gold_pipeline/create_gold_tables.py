@@ -10,6 +10,15 @@ Gold 레이어 Iceberg 테이블 초기화 스크립트
 """
 
 import logging
+import os
+import sys
+
+# gold_pipeline/에서 직접 실행해도 레포 루트를 import 경로에 추가 (PYTHONPATH 불필요)
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
+from pyiceberg.partitioning import UNPARTITIONED_PARTITION_SPEC
 
 from oliveyoung_common.logging import setup_logging
 from oliveyoung_common.dq_metrics import create_dq_metrics_table
@@ -74,7 +83,7 @@ def create_neo4j_sync_checkpoint(catalog) -> None:
         catalog=catalog,
         identifier=OliveyoungIceberg.NEO4J_SYNC_CHECKPOINT_TABLE,
         schema=NEO4J_SYNC_CHECKPOINT_SCHEMA,
-        partition=None,
+        partition=UNPARTITIONED_PARTITION_SPEC,
         sort_order=NEO4J_SYNC_CHECKPOINT_SORT,
         location=f"{S3.GOLD_PATH}neo4j_sync_checkpoint",
     )
