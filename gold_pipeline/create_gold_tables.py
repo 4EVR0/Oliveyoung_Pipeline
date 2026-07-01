@@ -12,6 +12,7 @@ Gold 레이어 Iceberg 테이블 초기화 스크립트
 import logging
 
 from oliveyoung_common.logging import setup_logging
+from oliveyoung_common.dq_metrics import create_dq_metrics_table
 from config.settings import OliveyoungIceberg, S3
 from gold_pipeline.schemas import (
     GOLD_INGREDIENT_FREQUENCY_PARTITION,
@@ -79,13 +80,19 @@ def create_neo4j_sync_checkpoint(catalog) -> None:
     )
 
 
+def create_dq_metrics(catalog) -> None:
+    # 스키마·생성 로직은 oliveyoung_common이 소유, 여기선 위치만 지정해 호출
+    created = create_dq_metrics_table(catalog, location=f"{S3.GOLD_PATH}dq_metrics")
+    logger.info("dq_metrics 테이블 " + ("생성 완료" if created else "이미 존재함 (건너뜀)"))
+
+
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Gold 테이블 초기화")
     parser.add_argument(
         "table",
-        choices=["ingredient_frequency", "product_change_log", "neo4j_sync_checkpoint", "all"],
+        choices=["ingredient_frequency", "product_change_log", "neo4j_sync_checkpoint", "dq_metrics", "all"],
         help="생성할 테이블 선택 (all: 전체 생성)",
     )
     args = parser.parse_args()
@@ -100,3 +107,6 @@ if __name__ == "__main__":
 
     if args.table in ("neo4j_sync_checkpoint", "all"):
         create_neo4j_sync_checkpoint(catalog)
+
+    if args.table in ("dq_metrics", "all"):
+        create_dq_metrics(catalog)

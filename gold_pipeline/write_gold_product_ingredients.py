@@ -22,6 +22,7 @@ from pyiceberg.expressions import AlwaysTrue
 from config.settings import OliveyoungIceberg, INCIIceberg
 from gold_pipeline.write_gold import _build_arrow
 from oliveyoung_common.logging import log_dq
+from oliveyoung_common.dq_metrics import write_dq_metrics
 
 logger = logging.getLogger(__name__)
 
@@ -89,16 +90,25 @@ def write_gold_product_ingredients(
     match_rate = matched / total if total else 0
     logger.info(f"unique 성분: {total}건 | INCI 매핑 성공: {matched}건 ({match_rate:.1%})")
 
-    # 정합성 메트릭 — Loki에서 LogQL로 추출 (매핑률 등)
-    log_dq(
-        logger,
-        stage="silver_to_gold",
-        batch_job=batch_job,
+    # 정합성 메트릭 — 로그(Loki) + 테이블(dq_metrics) 이중 기록, 같은 수치
+    metrics = dict(
         ingredients_unique=int(total),
         ingredients_matched=int(matched),
         ingredients_unmatched=int(total - matched),
         match_rate=round(float(match_rate), 4),
     )
+    log_dq(logger, stage="silver_to_gold", batch_job=batch_job, **metrics)
+    # 테이블 적재 실패가 파이프라인을 깨지 않도록 비치명적 처리
+    try:
+        write_dq_metrics(
+            catalog,
+            stage="silver_to_gold",
+            batch_job=batch_job,
+            target_table=OliveyoungIceberg.GOLD_PRODUCT_INGREDIENTS_TABLE,
+            **metrics,
+        )
+    except Exception as e:
+        logger.warning(f"dq_metrics 적재 실패(무시): {e}")
 
     result_df["batch_job"]  = batch_job
     result_df["batch_date"] = pd.to_datetime(batch_date, utc=True)
