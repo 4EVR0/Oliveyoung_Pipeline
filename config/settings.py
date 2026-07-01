@@ -65,6 +65,7 @@ class OliveyoungIceberg:
     GOLD_PRODUCT_CHANGE_LOG_TABLE   = f"{DATABASE}.gold_product_change_log"
     GOLD_PRODUCT_INGREDIENTS_TABLE  = f"{DATABASE}.gold_product_ingredients"
     NEO4J_SYNC_CHECKPOINT_TABLE     = f"{DATABASE}.neo4j_sync_checkpoint"
+    DQ_METRICS_TABLE                = f"{DATABASE}.dq_metrics"   # 정합성 메트릭(생성·쓰기는 oliveyoung_common.dq_metrics)
     TYPO_MAP_TABLE                  = f"{DATABASE}.typo_map"
     GARBAGE_KEYWORDS_TABLE          = f"{DATABASE}.garbage_keywords"
     CUSTOM_INGREDIENT_DICT_TABLE    = f"{DATABASE}.custom_ingredient_dict"

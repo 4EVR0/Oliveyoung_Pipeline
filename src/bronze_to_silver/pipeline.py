@@ -19,6 +19,8 @@ from src.bronze_to_silver.ac_builder import (
 from src.bronze_to_silver.cleaner import process_pipeline
 from silver_pipeline.write_silver import write_to_iceberg, write_csv_to_s3
 from oliveyoung_common.logging import log_dq
+from oliveyoung_common.dq_metrics import write_dq_metrics
+from oliveyoung_common.batch import build_run_id
 
 logger = logging.getLogger(__name__)
 
@@ -112,14 +114,27 @@ def run_pipeline():
     # 에러율은 출력 안에서 닫힌 비율(dedup 영향 없음) — 점수판/임계값용
     processed = len(silver_df) + len(error_df)
     error_rate = round(len(error_df) / processed, 4) if processed else 0.0
-    log_dq(
-        logger,
-        stage="bronze_to_silver",
+    batch_job = build_run_id("bronze_to_silver")   # 이 run의 대조·드릴다운 키
+    metrics = dict(
         bronze_loaded=len(raw_df),
         silver_ok=len(silver_df),
         silver_error=len(error_df),
         error_rate=error_rate,
     )
+    # 로그(Loki) + 테이블(dq_metrics) 이중 기록, 같은 수치
+    log_dq(logger, stage="bronze_to_silver", batch_job=batch_job, **metrics)
+    # 테이블 적재 실패가 파이프라인을 깨지 않도록 비치명적 처리
+    # (참고: 현재 silver 행엔 batch_job이 안 찍혀 배치-정밀 드릴다운은 후속 과제)
+    try:
+        write_dq_metrics(
+            OliveyoungIceberg.get_catalog(),
+            stage="bronze_to_silver",
+            batch_job=batch_job,
+            target_table=OliveyoungIceberg.SILVER_CURRENT_TABLE,
+            **metrics,
+        )
+    except Exception as e:
+        logger.warning(f"dq_metrics 적재 실패(무시): {e}")
 
     print("10. Iceberg write...")
     write_to_iceberg(silver_df, error_df)
