@@ -33,6 +33,7 @@ _BASE_SELECTED_FIELDS = (
     "review_count",
     "review_stats",
     "batch_date",
+    "goods_no",
 )
 
 _CHANGE_TRACK_FIELDS = ("product_ingredients", "rating", "review_count", "review_stats")
@@ -245,6 +246,7 @@ def compute_change_log(catalog, batch: BatchMetadata) -> pd.DataFrame | None:
         "review_count",
         "review_stats",
         "batch_job",
+        "goods_no",
     ]
     for col in output_cols:
         if col not in change_df.columns:

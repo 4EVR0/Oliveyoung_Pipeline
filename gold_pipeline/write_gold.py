@@ -194,6 +194,14 @@ def write_gold_change_log(catalog, change_df: pd.DataFrame) -> None:
         return
 
     change_table = catalog.load_table(OliveyoungIceberg.GOLD_PRODUCT_CHANGE_LOG_TABLE)
+
+    # 기존 테이블에 goods_no 컬럼이 없으면 추가 (없으면 _build_arrow 단계에서 값이 버려짐)
+    if "goods_no" not in {field.name for field in change_table.schema().fields}:
+        with change_table.update_schema() as update:
+            update.add_column("goods_no", StringType())
+        change_table = catalog.load_table(OliveyoungIceberg.GOLD_PRODUCT_CHANGE_LOG_TABLE)
+        logger.info("schema evolve 완료: gold_product_change_log goods_no 추가")
+
     arrow_table  = _build_arrow(change_df, change_table)
     change_table.append(arrow_table)
 
