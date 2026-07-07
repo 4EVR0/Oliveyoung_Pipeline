@@ -105,7 +105,7 @@ def _add_missing_columns_as_none(df: pd.DataFrame, target_columns: list[str]) ->
 
 def _evolve_schema(table) -> None:
     """
-    테이블에 batch_job, batch_date 컬럼이 없으면 추가합니다.
+    테이블에 batch_job, batch_date, goods_no 컬럼이 없으면 추가합니다.
     이미 존재하면 아무것도 하지 않습니다.
     """
     existing = {f.name for f in table.schema().fields}
@@ -115,6 +115,8 @@ def _evolve_schema(table) -> None:
             update.add_column("batch_job", StringType())
         if "batch_date" not in existing:
             update.add_column("batch_date", TimestamptzType())
+        if "goods_no" not in existing:
+            update.add_column("goods_no", StringType())
 
     # 참고:
     # update_schema() commit 이후에는 호출 측에서 table을 reload 해서

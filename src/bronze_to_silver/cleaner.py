@@ -392,6 +392,7 @@ def _clean_rows(
         url              = str(row.get('url', ''))
         main_category    = str(row.get('main_category', ''))
         sub_category     = str(row.get('sub_category', ''))
+        goods_no         = str(row.get('goods_no', ''))
 
         crawled_at_raw = row.get('crawled_at', None)
         try:
@@ -526,6 +527,7 @@ def _clean_rows(
             'review_stats':            review_stats,
             'product_url':             url,
             'crawled_at':              crawled_at,
+            'goods_no':                goods_no,
         })
 
     return interim_list, error_records
@@ -625,6 +627,7 @@ def _match_ingredients(
                 'review_stats':            row['review_stats'],
                 'product_url':             url,
                 'crawled_at':              crawled_at,
+                'goods_no':                row['goods_no'],
             })
 
         if (residual_text
