@@ -85,6 +85,7 @@ GOLD_PRODUCT_CHANGE_LOG_SCHEMA = Schema(
     NestedField(9,  "review_count",  IntegerType(),                required=False),
     NestedField(10, "review_stats",  _CHANGE_LOG_REVIEW_STATS_TYPE, required=False),
     NestedField(11, "batch_job",     StringType(),                 required=False),
+    NestedField(12, "goods_no",      StringType(),                 required=False),  # 올리브영 상품번호(raw 통과)
 )
 
 # batch_date 일 단위 파티션

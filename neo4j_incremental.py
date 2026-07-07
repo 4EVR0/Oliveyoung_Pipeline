@@ -130,12 +130,14 @@ def apply_new(tx, product: dict, mapping: dict[str, str]) -> None:
         MERGE (p:Product {product_id: $product_id})
         SET p.product_name = $product_name,
             p.brand        = $brand,
-            p.category     = $category
+            p.category     = $category,
+            p.goods_no     = $goods_no
         """,
         product_id=product["product_id"],
         product_name=product.get("product_name"),
         brand=product.get("product_brand"),
         category=product.get("category_id"),
+        goods_no=product.get("goods_no"),
     )
     _merge_contains(tx, product["product_id"], product.get("product_ingredients") or [], mapping)
 
@@ -153,12 +155,14 @@ def apply_changed(tx, product: dict, mapping: dict[str, str]) -> None:
         MATCH (p:Product {product_id: $product_id})
         SET p.product_name = $product_name,
             p.brand        = $brand,
-            p.category     = $category
+            p.category     = $category,
+            p.goods_no     = $goods_no
         """,
         product_id=product["product_id"],
         product_name=product.get("product_name"),
         brand=product.get("product_brand"),
         category=product.get("category_id"),
+        goods_no=product.get("goods_no"),
     )
     tx.run(
         "MATCH (p:Product {product_id: $product_id})-[r:CONTAINS]->() DELETE r",
