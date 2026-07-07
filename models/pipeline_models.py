@@ -28,6 +28,7 @@ class ErrorRecord:
     crawled_at:              Any   # pd.Timestamp | pd.NaT
     error_type:              str
     residual_text:           str
+    goods_no:                str = ""   # 올리브영 상품번호(raw 통과)
 
     def to_dict(self) -> dict:
         return asdict(self)

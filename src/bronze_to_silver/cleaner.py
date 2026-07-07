@@ -254,6 +254,7 @@ def _make_error(
     crawled_at,
     error_type:              str,
     residual_text:           str,
+    goods_no:                str = "",
 ) -> ErrorRecord:
     """에러 레코드를 생성합니다."""
     return ErrorRecord(
@@ -269,6 +270,7 @@ def _make_error(
         crawled_at              = crawled_at,
         error_type              = error_type,
         residual_text           = residual_text,
+        goods_no                = goods_no,
     )
 
 
@@ -430,6 +432,7 @@ def _clean_rows(
                 raw_text, url, crawled_at,
                 'INCOMPLETE_DATA_REJECTED',
                 f"Missing fields: {', '.join(missing_fields)}",
+                goods_no,
             ))
             continue
 
@@ -442,6 +445,7 @@ def _clean_rows(
                 raw_text, url, crawled_at,
                 'OPTION_BUNDLE_REJECTED',
                 'Multi-option product (n-종) detected in name',
+                goods_no,
             ))
             continue
 
@@ -454,6 +458,7 @@ def _clean_rows(
                 raw_text, url, crawled_at,
                 'INVALID_METADATA_REJECTED',
                 f"Garbage name detected: {product_name_raw!r}",
+                goods_no,
             ))
             continue
 
@@ -491,6 +496,7 @@ def _clean_rows(
                 brand, product_name_raw, clean_product_name,
                 raw_text, url, crawled_at,
                 'HETEROGENEOUS_BUNDLE_REJECTED', text,
+                goods_no,
             ))
             continue
 
@@ -501,6 +507,7 @@ def _clean_rows(
                 brand, product_name_raw, clean_product_name,
                 raw_text, url, crawled_at,
                 'HETEROGENEOUS_BUNDLE_REJECTED', text,
+                goods_no,
             ))
             continue
         elif bundle_count == 1:
@@ -552,6 +559,7 @@ def _dedup_interim(interim_list: list[dict]) -> tuple[pd.DataFrame, list[dict]]:
             r['product_ingredients_raw'], r['product_url'], r['crawled_at'],
             'DUPLICATE_PRODUCT_REJECTED',
             f"Duplicate of {r['product_brand']} | {r['product_name']}",
+            r['goods_no'],
         )
         for r in interim_df[duplicate_mask].to_dict('records')
     ]
@@ -601,6 +609,7 @@ def _match_ingredients(
                 row['product_brand'], row['product_name_raw'], row['product_name'],
                 row['product_ingredients_raw'], url, crawled_at,
                 'HIDDEN_BUNDLE_REJECTED', 'Duplicate Core Ingredients',
+                row['goods_no'],
             ))
             continue
 
@@ -638,6 +647,7 @@ def _match_ingredients(
                 row['product_brand'], row['product_name_raw'], row['product_name'],
                 row['product_ingredients_raw'], url, crawled_at,
                 'UNMAPPED_RESIDUAL', residual_text,
+                row['goods_no'],
             ))
 
     return silver_records, error_records

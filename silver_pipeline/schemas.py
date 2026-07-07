@@ -82,6 +82,7 @@ SILVER_ERROR_SCHEMA = Schema(
     NestedField(12, "residual_text",           StringType(),      required=False),
     NestedField(13, "batch_job",               StringType(),      required=False),
     NestedField(14, "batch_date",              TimestamptzType(), required=False),
+    NestedField(15, "goods_no",                StringType(),      required=False),  # 올리브영 상품번호(raw 통과)
 )
 
 
