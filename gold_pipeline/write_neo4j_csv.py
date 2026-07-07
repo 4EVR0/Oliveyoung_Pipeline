@@ -44,6 +44,7 @@ PRODUCT_COLUMNS: list[CsvColumn] = [
     CsvColumn(name="product_name"),
     CsvColumn(name="brand", source="product_brand"),
     CsvColumn(name="category"),
+    CsvColumn(name="goods_no"),  # 올리브영 상품번호(raw 통과)
 ]
 
 
@@ -57,7 +58,7 @@ def write_product_node_csv() -> None:
         table = catalog.load_table(OliveyoungIceberg.SILVER_CURRENT_TABLE)
         df: pd.DataFrame = (
             table.scan(
-                selected_fields=("product_id", "product_name", "product_brand", "category"),
+                selected_fields=("product_id", "product_name", "product_brand", "category", "goods_no"),
             ).to_pandas()
         )
 
