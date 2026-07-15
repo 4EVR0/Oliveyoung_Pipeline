@@ -18,6 +18,8 @@ COMMON = dict(
         "AWS_SECRET_ACCESS_KEY": os.environ.get("AWS_SECRET_ACCESS_KEY", ""),
         "LOG_FORMAT": "json",
         "LOG_LEVEL": "INFO",
+        # 크롤 DAG conf에서 전파된 논리 배치 날짜 → 전 스테이지 공유(없으면 각자 파생)
+        "BATCH_DATE": "{{ dag_run.conf.get('batch_date', '') }}",
     },
 )
 

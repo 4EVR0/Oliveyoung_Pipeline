@@ -665,6 +665,7 @@ def process_pipeline(
     garbage_config: dict = None,
     product_name_norm_list: list[dict] = None,
     batch: BatchMetadata = None,
+    batch_date: str = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Bronze raw DataFrame을 받아 silver / error DataFrame으로 전처리합니다.
@@ -697,7 +698,7 @@ def process_pipeline(
 
     if not interim_list:
         error_df = pd.DataFrame([r.to_dict() for r in error_records])
-        add_batch_metadata(error_df, batch)
+        add_batch_metadata(error_df, batch, batch_date)
         return pd.DataFrame(), error_df
 
     # [Step 10] 중복 제거
@@ -712,6 +713,6 @@ def process_pipeline(
     error_df  = pd.DataFrame([r.to_dict() for r in error_records])
 
     for df_ in (silver_df, error_df):
-        add_batch_metadata(df_, batch)
+        add_batch_metadata(df_, batch, batch_date)
 
     return silver_df, error_df

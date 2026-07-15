@@ -103,7 +103,8 @@ def write_gold_product_ingredients(
         write_dq_metrics(
             catalog,
             stage="silver_to_gold",
-            batch_job=batch_job,
+            batch_date=batch_date.strftime("%Y-%m-%d"),
+            run_id=batch_job,
             target_table=OliveyoungIceberg.GOLD_PRODUCT_INGREDIENTS_TABLE,
             **metrics,
         )
