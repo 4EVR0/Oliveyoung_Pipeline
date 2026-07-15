@@ -66,7 +66,7 @@ python silver_pipeline/create_silver.py
 python silver_pipeline/create_category_master.py
 python reference_pipeline/create_reference_tables.py
 python reference_pipeline/sync_reference_data.py
-python gold_pipeline/create_gold_tables.py
+python gold_pipeline/create_gold_tables.py all   # dq_metrics 포함 Gold 전체 (개별: dq_metrics 등 인자 지정)
 python gold_pipeline/create_gold_product_ingredients.py
 ```
 
@@ -135,6 +135,17 @@ CSV 익스포트는 그래프를 처음 채울 때만 쓴다
 `INCOMPLETE_DATA` · `OPTION_BUNDLE` · `INVALID_METADATA` · `HETEROGENEOUS_BUNDLE`
 · `DUPLICATE_PRODUCT` · `UNMAPPED_RESIDUAL` · `HIDDEN_BUNDLE`.
 
+### 정합성 메트릭 (`dq_metrics`)
+
+파이프라인 각 단계가 남기는 데이터 정합성 수치를 모으는 **key/value(EAV) 테이블**.
+스키마 진화 없이 지표를 추가할 수 있고, 여러 파이프라인(crawl·bronze_to_silver·silver_to_gold 등)이 같은 테이블에 적재한다.
+`batch_date`(YYYY-MM-DD) · `run_id` · `stage` · `metric_name` · `metric_value` · `target_table` · `created_at`.
+
+- 스키마·writer는 `oliveyoung_common/dq_metrics.py`가 소유(순수함수 `write_dq_metrics`), 생성은 `create_gold_tables.py dq_metrics`.
+- 각 단계가 `log_dq`(Loki 로그) + `write_dq_metrics`(테이블)로 **같은 수치를 이중 기록**(테이블 적재는 비치명적).
+- `batch_date`(단계 관통 논리 배치 날짜)로 crawl·bronze_to_silver·silver_to_gold를 한 배치로 묶어, 대시보드 그래프의 한 시점을 클릭하면 그 배치의 silver 행으로 드릴다운한다. `run_id`는 초단위 유니크 실행 식별.
+- 테이블 실제 위치는 `GOLD_PATH`(`olive_young_gold/dq_metrics/`). 조회는 **dq_api**(pyiceberg+DuckDB)가 읽어 Grafana(Infinity)에 노출.
+
 ## 설계 메모
 
 - **current / history 분리** — 최신 조회용(`current`, overwrite)과 시계열 추적용(`history`, append)을 나눠 재읽기 없이 변화를 본다.
@@ -142,6 +153,7 @@ CSV 익스포트는 그래프를 처음 채울 때만 쓴다
 - **Neo4j 증분 + checkpoint** — `neo4j_sync_checkpoint` 에 마지막 처리 배치를 남겨 change_log 의 신규분만 그래프에 반영한다.
 - **Aho-Corasick 매칭** — 수천 개 표준명을 한 번의 스캔으로 동시 탐색. 성분명 내부 쉼표는 마스킹으로 분리.
 - **사전 분리 관리** — 오타·불량키워드·커스텀 성분 사전을 Git 의 JSON 으로 두고 `sync_reference_data.py` 로 Iceberg 동기화. 코드 재배포 없이 수정.
+- **정합성 = 로그 + 테이블 이중 소스** — 각 단계가 `log_dq`(Loki)와 `write_dq_metrics`(Iceberg `dq_metrics`)로 같은 수치를 남긴다. 로그 기반 대시보드는 유지하고, 테이블 소스는 dq_api→Grafana로 별도 대시보드에 노출(장기 추세·드릴다운). 지표 추가는 key/value라 스키마 진화 불필요.
 
 ## 인프라
 
