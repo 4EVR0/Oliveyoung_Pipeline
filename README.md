@@ -139,10 +139,11 @@ CSV 익스포트는 그래프를 처음 채울 때만 쓴다
 
 파이프라인 각 단계가 남기는 데이터 정합성 수치를 모으는 **key/value(EAV) 테이블**.
 스키마 진화 없이 지표를 추가할 수 있고, 여러 파이프라인(crawl·bronze_to_silver·silver_to_gold 등)이 같은 테이블에 적재한다.
-`batch_job` · `stage` · `metric_name` · `metric_value` · `target_table` · `created_at`.
+`batch_date`(YYYY-MM-DD) · `run_id` · `stage` · `metric_name` · `metric_value` · `target_table` · `created_at`.
 
 - 스키마·writer는 `oliveyoung_common/dq_metrics.py`가 소유(순수함수 `write_dq_metrics`), 생성은 `create_gold_tables.py dq_metrics`.
 - 각 단계가 `log_dq`(Loki 로그) + `write_dq_metrics`(테이블)로 **같은 수치를 이중 기록**(테이블 적재는 비치명적).
+- `batch_date`(단계 관통 논리 배치 날짜)로 crawl·bronze_to_silver·silver_to_gold를 한 배치로 묶어, 대시보드 그래프의 한 시점을 클릭하면 그 배치의 silver 행으로 드릴다운한다. `run_id`는 초단위 유니크 실행 식별.
 - 테이블 실제 위치는 `GOLD_PATH`(`olive_young_gold/dq_metrics/`). 조회는 **dq_api**(pyiceberg+DuckDB)가 읽어 Grafana(Infinity)에 노출.
 
 ## 설계 메모
