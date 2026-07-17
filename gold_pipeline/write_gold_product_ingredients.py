@@ -106,6 +106,7 @@ def write_gold_product_ingredients(
             batch_date=batch_date.strftime("%Y-%m-%d"),
             run_id=batch_job,
             target_table=OliveyoungIceberg.GOLD_PRODUCT_INGREDIENTS_TABLE,
+            report_webhook=os.environ.get("DISCORD_DQ_WEBHOOK_URL"),  # 완료 리포트(옵트인)
             **metrics,
         )
     except Exception as e:
