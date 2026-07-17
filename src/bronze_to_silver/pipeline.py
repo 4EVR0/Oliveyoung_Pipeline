@@ -145,6 +145,7 @@ def run_pipeline():
             batch_date=batch_date,
             run_id=batch_job,
             target_table=OliveyoungIceberg.SILVER_CURRENT_TABLE,
+            report_webhook=os.environ.get("DISCORD_DQ_WEBHOOK_URL"),  # 완료 리포트(옵트인)
             **metrics,
         )
     except Exception as e:

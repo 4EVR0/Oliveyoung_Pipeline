@@ -20,6 +20,8 @@ COMMON = dict(
         "LOG_LEVEL": "INFO",
         # 크롤 DAG conf에서 전파된 논리 배치 날짜 → 전 스테이지 공유(없으면 각자 파생)
         "BATCH_DATE": "{{ dag_run.conf.get('batch_date', '') }}",
+        # bronze/silver 완료 리포트용 웹훅(없으면 미전송)
+        "DISCORD_DQ_WEBHOOK_URL": os.environ.get("DISCORD_DQ_WEBHOOK_URL", ""),
     },
 )
 
