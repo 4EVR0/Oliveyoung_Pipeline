@@ -1,0 +1,108 @@
+{
+  "run_id": "bronze_format_benchmark_20260917_032256",
+  "input": {
+    "bronze_glob": "s3://oliveyoung-crawl-data/oliveyoung/*/*/run_id=*/*.json",
+    "file_count": 268,
+    "row_count": 5174
+  },
+  "artifacts": {
+    "compacted_json_path": "s3://oliveyoung-crawl-data/profile_results/bronze_format_benchmark/bronze_format_benchmark_20260917_032256/bronze_compacted.ndjson",
+    "parquet_path": "s3://oliveyoung-crawl-data/profile_results/bronze_format_benchmark/bronze_format_benchmark_20260917_032256/bronze_compacted.parquet"
+  },
+  "summary_rows": [
+    {
+      "format": "original_json_parts",
+      "wall_seconds": 29.931989,
+      "cpu_seconds": 6.874857,
+      "cpu_wall_ratio": 0.229683,
+      "rows": 5174,
+      "file_size_mb": "",
+      "note": "268 S3 JSON files"
+    },
+    {
+      "format": "compacted_json",
+      "wall_seconds": 1.867809,
+      "cpu_seconds": 1.345442,
+      "cpu_wall_ratio": 0.720332,
+      "rows": 5174,
+      "file_size_mb": 23.76,
+      "note": "single NDJSON file"
+    },
+    {
+      "format": "parquet",
+      "wall_seconds": 1.130475,
+      "cpu_seconds": 0.956898,
+      "cpu_wall_ratio": 0.846457,
+      "rows": 5174,
+      "file_size_mb": 4.14,
+      "note": "single Snappy Parquet file"
+    }
+  ],
+  "compaction_costs": [
+    {
+      "stage": "build_compacted_json",
+      "wall_seconds": 0.9078801609575748,
+      "cpu_seconds": 0.8074065709999996,
+      "size_mb": 23.755615234375
+    },
+    {
+      "stage": "build_parquet",
+      "wall_seconds": 0.21508416905999184,
+      "cpu_seconds": 0.16054615400000039,
+      "size_mb": 4.143631935119629
+    }
+  ],
+  "measurements": [
+    {
+      "stage": "read_original_s3_json_parts",
+      "wall_seconds": 29.931988668162376,
+      "cpu_seconds": 6.874856577000001,
+      "cpu_wall_ratio": 0.22968258652030524,
+      "rows": 5174,
+      "bytes": null,
+      "path": null,
+      "note": "268 S3 JSON files"
+    },
+    {
+      "stage": "build_compacted_json",
+      "wall_seconds": 0.9078801609575748,
+      "cpu_seconds": 0.8074065709999996,
+      "cpu_wall_ratio": 0.889331660412535,
+      "rows": 5174,
+      "bytes": 24909568,
+      "path": "s3://oliveyoung-crawl-data/profile_results/bronze_format_benchmark/bronze_format_benchmark_20260917_032256/bronze_compacted.ndjson",
+      "note": null
+    },
+    {
+      "stage": "build_parquet",
+      "wall_seconds": 0.21508416905999184,
+      "cpu_seconds": 0.16054615400000039,
+      "cpu_wall_ratio": 0.7464340806748099,
+      "rows": 5174,
+      "bytes": 4344913,
+      "path": "s3://oliveyoung-crawl-data/profile_results/bronze_format_benchmark/bronze_format_benchmark_20260917_032256/bronze_compacted.parquet",
+      "note": null
+    },
+    {
+      "stage": "read_compacted_s3_json",
+      "wall_seconds": 1.867808936163783,
+      "cpu_seconds": 1.3454421859999997,
+      "cpu_wall_ratio": 0.7203318069370354,
+      "rows": 5174,
+      "bytes": 24909568,
+      "path": "s3://oliveyoung-crawl-data/profile_results/bronze_format_benchmark/bronze_format_benchmark_20260917_032256/bronze_compacted.ndjson",
+      "note": "single NDJSON file on S3"
+    },
+    {
+      "stage": "read_s3_parquet",
+      "wall_seconds": 1.130474730860442,
+      "cpu_seconds": 0.9568980029999992,
+      "cpu_wall_ratio": 0.8464567821623684,
+      "rows": 5174,
+      "bytes": 4344913,
+      "path": "s3://oliveyoung-crawl-data/profile_results/bronze_format_benchmark/bronze_format_benchmark_20260917_032256/bronze_compacted.parquet",
+      "note": "single Snappy Parquet file on S3"
+    }
+  ],
+  "conclusion": "현재 small JSON 방식은 268개 S3 JSON 파일에서 5174건을 읽는 데 29.93s가 걸렸다. compacted JSON은 1.87s, Parquet은 1.13s로 측정됐다. 파일 수를 줄이는 것만으로도 S3 object 요청과 JSON 파싱 오버헤드가 줄고, Parquet은 컬럼형 저장/압축 덕분에 Bronze->Silver 입력 포맷으로 가장 유리하다."
+}
