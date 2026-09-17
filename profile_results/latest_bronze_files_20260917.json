@@ -1,0 +1,1963 @@
+{
+  "bronze_glob": "s3://oliveyoung-crawl-data/oliveyoung/*/*/run_id=*/*.json",
+  "file_count": 262,
+  "category_run_counts": [
+    {
+      "main_category": "더모_코스메틱",
+      "sub_category": "마스크팩",
+      "run_id": "20260913",
+      "file_count": 5
+    },
+    {
+      "main_category": "더모_코스메틱",
+      "sub_category": "바디케어",
+      "run_id": "20260913",
+      "file_count": 6
+    },
+    {
+      "main_category": "더모_코스메틱",
+      "sub_category": "선케어",
+      "run_id": "20260910",
+      "file_count": 4
+    },
+    {
+      "main_category": "더모_코스메틱",
+      "sub_category": "스킨케어",
+      "run_id": "20260913",
+      "file_count": 25
+    },
+    {
+      "main_category": "더모_코스메틱",
+      "sub_category": "클렌징",
+      "run_id": "20260913",
+      "file_count": 4
+    },
+    {
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_count": 30
+    },
+    {
+      "main_category": "마스크팩",
+      "sub_category": "코팩",
+      "run_id": "20260910",
+      "file_count": 2
+    },
+    {
+      "main_category": "마스크팩",
+      "sub_category": "패드",
+      "run_id": "20260910",
+      "file_count": 11
+    },
+    {
+      "main_category": "마스크팩",
+      "sub_category": "패치",
+      "run_id": "20260913",
+      "file_count": 2
+    },
+    {
+      "main_category": "마스크팩",
+      "sub_category": "페이셜팩",
+      "run_id": "20260913",
+      "file_count": 11
+    },
+    {
+      "main_category": "스킨케어",
+      "sub_category": "로션",
+      "run_id": "20260910",
+      "file_count": 14
+    },
+    {
+      "main_category": "스킨케어",
+      "sub_category": "미스트-오일",
+      "run_id": "20260910",
+      "file_count": 9
+    },
+    {
+      "main_category": "스킨케어",
+      "sub_category": "스킨-토너",
+      "run_id": "",
+      "file_count": 3
+    },
+    {
+      "main_category": "스킨케어",
+      "sub_category": "스킨-토너",
+      "run_id": "20260913",
+      "file_count": 2
+    },
+    {
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_count": 46
+    },
+    {
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_count": 38
+    },
+    {
+      "main_category": "클렌징",
+      "sub_category": "오일-밤",
+      "run_id": "20260913",
+      "file_count": 12
+    },
+    {
+      "main_category": "클렌징",
+      "sub_category": "워터-밀크",
+      "run_id": "20260910",
+      "file_count": 6
+    },
+    {
+      "main_category": "클렌징",
+      "sub_category": "클렌징폼-젤",
+      "run_id": "20260910",
+      "file_count": 26
+    },
+    {
+      "main_category": "클렌징",
+      "sub_category": "필링&스크럽",
+      "run_id": "20260913",
+      "file_count": 6
+    }
+  ],
+  "files": [
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/스킨-토너/run_id=/part_0000.json",
+      "main_category": "스킨케어",
+      "sub_category": "스킨-토너",
+      "run_id": "",
+      "file_name": "part_0000.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/스킨-토너/run_id=/part_0001.json",
+      "main_category": "스킨케어",
+      "sub_category": "스킨-토너",
+      "run_id": "",
+      "file_name": "part_0001.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/스킨-토너/run_id=/part_0002.json",
+      "main_category": "스킨케어",
+      "sub_category": "스킨-토너",
+      "run_id": "",
+      "file_name": "part_0002.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/마스크팩/run_id=20260913/part_0000.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "마스크팩",
+      "run_id": "20260913",
+      "file_name": "part_0000.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/마스크팩/run_id=20260913/part_0001.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "마스크팩",
+      "run_id": "20260913",
+      "file_name": "part_0001.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/마스크팩/run_id=20260913/part_0002.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "마스크팩",
+      "run_id": "20260913",
+      "file_name": "part_0002.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/마스크팩/run_id=20260913/part_0003.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "마스크팩",
+      "run_id": "20260913",
+      "file_name": "part_0003.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/마스크팩/run_id=20260913/part_0004.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "마스크팩",
+      "run_id": "20260913",
+      "file_name": "part_0004.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/바디케어/run_id=20260913/part_0000.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "바디케어",
+      "run_id": "20260913",
+      "file_name": "part_0000.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/바디케어/run_id=20260913/part_0001.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "바디케어",
+      "run_id": "20260913",
+      "file_name": "part_0001.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/바디케어/run_id=20260913/part_0002.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "바디케어",
+      "run_id": "20260913",
+      "file_name": "part_0002.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/바디케어/run_id=20260913/part_0003.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "바디케어",
+      "run_id": "20260913",
+      "file_name": "part_0003.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/바디케어/run_id=20260913/part_0004.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "바디케어",
+      "run_id": "20260913",
+      "file_name": "part_0004.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/바디케어/run_id=20260913/part_0005.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "바디케어",
+      "run_id": "20260913",
+      "file_name": "part_0005.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/선케어/run_id=20260910/part_0000.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "선케어",
+      "run_id": "20260910",
+      "file_name": "part_0000.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/선케어/run_id=20260910/part_0001.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "선케어",
+      "run_id": "20260910",
+      "file_name": "part_0001.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/선케어/run_id=20260910/part_0002.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "선케어",
+      "run_id": "20260910",
+      "file_name": "part_0002.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/선케어/run_id=20260910/part_0003.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "선케어",
+      "run_id": "20260910",
+      "file_name": "part_0003.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/스킨케어/run_id=20260913/part_0000.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "스킨케어",
+      "run_id": "20260913",
+      "file_name": "part_0000.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/스킨케어/run_id=20260913/part_0001.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "스킨케어",
+      "run_id": "20260913",
+      "file_name": "part_0001.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/스킨케어/run_id=20260913/part_0002.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "스킨케어",
+      "run_id": "20260913",
+      "file_name": "part_0002.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/스킨케어/run_id=20260913/part_0003.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "스킨케어",
+      "run_id": "20260913",
+      "file_name": "part_0003.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/스킨케어/run_id=20260913/part_0004.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "스킨케어",
+      "run_id": "20260913",
+      "file_name": "part_0004.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/스킨케어/run_id=20260913/part_0005.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "스킨케어",
+      "run_id": "20260913",
+      "file_name": "part_0005.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/스킨케어/run_id=20260913/part_0006.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "스킨케어",
+      "run_id": "20260913",
+      "file_name": "part_0006.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/스킨케어/run_id=20260913/part_0007.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "스킨케어",
+      "run_id": "20260913",
+      "file_name": "part_0007.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/스킨케어/run_id=20260913/part_0008.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "스킨케어",
+      "run_id": "20260913",
+      "file_name": "part_0008.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/스킨케어/run_id=20260913/part_0009.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "스킨케어",
+      "run_id": "20260913",
+      "file_name": "part_0009.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/스킨케어/run_id=20260913/part_0010.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "스킨케어",
+      "run_id": "20260913",
+      "file_name": "part_0010.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/스킨케어/run_id=20260913/part_0011.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "스킨케어",
+      "run_id": "20260913",
+      "file_name": "part_0011.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/스킨케어/run_id=20260913/part_0012.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "스킨케어",
+      "run_id": "20260913",
+      "file_name": "part_0012.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/스킨케어/run_id=20260913/part_0013.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "스킨케어",
+      "run_id": "20260913",
+      "file_name": "part_0013.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/스킨케어/run_id=20260913/part_0014.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "스킨케어",
+      "run_id": "20260913",
+      "file_name": "part_0014.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/스킨케어/run_id=20260913/part_0015.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "스킨케어",
+      "run_id": "20260913",
+      "file_name": "part_0015.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/스킨케어/run_id=20260913/part_0016.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "스킨케어",
+      "run_id": "20260913",
+      "file_name": "part_0016.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/스킨케어/run_id=20260913/part_0017.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "스킨케어",
+      "run_id": "20260913",
+      "file_name": "part_0017.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/스킨케어/run_id=20260913/part_0018.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "스킨케어",
+      "run_id": "20260913",
+      "file_name": "part_0018.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/스킨케어/run_id=20260913/part_0019.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "스킨케어",
+      "run_id": "20260913",
+      "file_name": "part_0019.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/스킨케어/run_id=20260913/part_0020.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "스킨케어",
+      "run_id": "20260913",
+      "file_name": "part_0020.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/스킨케어/run_id=20260913/part_0021.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "스킨케어",
+      "run_id": "20260913",
+      "file_name": "part_0021.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/스킨케어/run_id=20260913/part_0022.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "스킨케어",
+      "run_id": "20260913",
+      "file_name": "part_0022.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/스킨케어/run_id=20260913/part_0023.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "스킨케어",
+      "run_id": "20260913",
+      "file_name": "part_0023.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/스킨케어/run_id=20260913/part_0024.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "스킨케어",
+      "run_id": "20260913",
+      "file_name": "part_0024.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/클렌징/run_id=20260913/part_0000.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "클렌징",
+      "run_id": "20260913",
+      "file_name": "part_0000.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/클렌징/run_id=20260913/part_0001.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "클렌징",
+      "run_id": "20260913",
+      "file_name": "part_0001.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/클렌징/run_id=20260913/part_0002.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "클렌징",
+      "run_id": "20260913",
+      "file_name": "part_0002.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/더모_코스메틱/클렌징/run_id=20260913/part_0003.json",
+      "main_category": "더모_코스메틱",
+      "sub_category": "클렌징",
+      "run_id": "20260913",
+      "file_name": "part_0003.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0000.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0000.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0001.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0001.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0002.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0002.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0003.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0003.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0004.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0004.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0005.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0005.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0006.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0006.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0007.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0007.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0008.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0008.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0009.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0009.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0010.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0010.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0011.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0011.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0012.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0012.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0013.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0013.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0014.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0014.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0015.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0015.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0016.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0016.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0017.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0017.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0018.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0018.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0019.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0019.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0020.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0020.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0021.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0021.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0022.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0022.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0023.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0023.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0024.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0024.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0025.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0025.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0026.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0026.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0027.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0027.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0028.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0028.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/시트팩/run_id=20260913/part_0029.json",
+      "main_category": "마스크팩",
+      "sub_category": "시트팩",
+      "run_id": "20260913",
+      "file_name": "part_0029.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/코팩/run_id=20260910/part_0000.json",
+      "main_category": "마스크팩",
+      "sub_category": "코팩",
+      "run_id": "20260910",
+      "file_name": "part_0000.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/코팩/run_id=20260910/part_0001.json",
+      "main_category": "마스크팩",
+      "sub_category": "코팩",
+      "run_id": "20260910",
+      "file_name": "part_0001.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/패드/run_id=20260910/part_0000.json",
+      "main_category": "마스크팩",
+      "sub_category": "패드",
+      "run_id": "20260910",
+      "file_name": "part_0000.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/패드/run_id=20260910/part_0001.json",
+      "main_category": "마스크팩",
+      "sub_category": "패드",
+      "run_id": "20260910",
+      "file_name": "part_0001.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/패드/run_id=20260910/part_0002.json",
+      "main_category": "마스크팩",
+      "sub_category": "패드",
+      "run_id": "20260910",
+      "file_name": "part_0002.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/패드/run_id=20260910/part_0003.json",
+      "main_category": "마스크팩",
+      "sub_category": "패드",
+      "run_id": "20260910",
+      "file_name": "part_0003.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/패드/run_id=20260910/part_0004.json",
+      "main_category": "마스크팩",
+      "sub_category": "패드",
+      "run_id": "20260910",
+      "file_name": "part_0004.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/패드/run_id=20260910/part_0005.json",
+      "main_category": "마스크팩",
+      "sub_category": "패드",
+      "run_id": "20260910",
+      "file_name": "part_0005.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/패드/run_id=20260910/part_0006.json",
+      "main_category": "마스크팩",
+      "sub_category": "패드",
+      "run_id": "20260910",
+      "file_name": "part_0006.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/패드/run_id=20260910/part_0007.json",
+      "main_category": "마스크팩",
+      "sub_category": "패드",
+      "run_id": "20260910",
+      "file_name": "part_0007.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/패드/run_id=20260910/part_0008.json",
+      "main_category": "마스크팩",
+      "sub_category": "패드",
+      "run_id": "20260910",
+      "file_name": "part_0008.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/패드/run_id=20260910/part_0009.json",
+      "main_category": "마스크팩",
+      "sub_category": "패드",
+      "run_id": "20260910",
+      "file_name": "part_0009.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/패드/run_id=20260910/part_0010.json",
+      "main_category": "마스크팩",
+      "sub_category": "패드",
+      "run_id": "20260910",
+      "file_name": "part_0010.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/패치/run_id=20260913/part_0000.json",
+      "main_category": "마스크팩",
+      "sub_category": "패치",
+      "run_id": "20260913",
+      "file_name": "part_0000.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/패치/run_id=20260913/part_0001.json",
+      "main_category": "마스크팩",
+      "sub_category": "패치",
+      "run_id": "20260913",
+      "file_name": "part_0001.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/페이셜팩/run_id=20260913/part_0000.json",
+      "main_category": "마스크팩",
+      "sub_category": "페이셜팩",
+      "run_id": "20260913",
+      "file_name": "part_0000.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/페이셜팩/run_id=20260913/part_0001.json",
+      "main_category": "마스크팩",
+      "sub_category": "페이셜팩",
+      "run_id": "20260913",
+      "file_name": "part_0001.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/페이셜팩/run_id=20260913/part_0002.json",
+      "main_category": "마스크팩",
+      "sub_category": "페이셜팩",
+      "run_id": "20260913",
+      "file_name": "part_0002.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/페이셜팩/run_id=20260913/part_0003.json",
+      "main_category": "마스크팩",
+      "sub_category": "페이셜팩",
+      "run_id": "20260913",
+      "file_name": "part_0003.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/페이셜팩/run_id=20260913/part_0004.json",
+      "main_category": "마스크팩",
+      "sub_category": "페이셜팩",
+      "run_id": "20260913",
+      "file_name": "part_0004.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/페이셜팩/run_id=20260913/part_0005.json",
+      "main_category": "마스크팩",
+      "sub_category": "페이셜팩",
+      "run_id": "20260913",
+      "file_name": "part_0005.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/페이셜팩/run_id=20260913/part_0006.json",
+      "main_category": "마스크팩",
+      "sub_category": "페이셜팩",
+      "run_id": "20260913",
+      "file_name": "part_0006.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/페이셜팩/run_id=20260913/part_0007.json",
+      "main_category": "마스크팩",
+      "sub_category": "페이셜팩",
+      "run_id": "20260913",
+      "file_name": "part_0007.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/페이셜팩/run_id=20260913/part_0008.json",
+      "main_category": "마스크팩",
+      "sub_category": "페이셜팩",
+      "run_id": "20260913",
+      "file_name": "part_0008.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/페이셜팩/run_id=20260913/part_0009.json",
+      "main_category": "마스크팩",
+      "sub_category": "페이셜팩",
+      "run_id": "20260913",
+      "file_name": "part_0009.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/마스크팩/페이셜팩/run_id=20260913/part_0010.json",
+      "main_category": "마스크팩",
+      "sub_category": "페이셜팩",
+      "run_id": "20260913",
+      "file_name": "part_0010.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/로션/run_id=20260910/part_0000.json",
+      "main_category": "스킨케어",
+      "sub_category": "로션",
+      "run_id": "20260910",
+      "file_name": "part_0000.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/로션/run_id=20260910/part_0001.json",
+      "main_category": "스킨케어",
+      "sub_category": "로션",
+      "run_id": "20260910",
+      "file_name": "part_0001.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/로션/run_id=20260910/part_0002.json",
+      "main_category": "스킨케어",
+      "sub_category": "로션",
+      "run_id": "20260910",
+      "file_name": "part_0002.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/로션/run_id=20260910/part_0003.json",
+      "main_category": "스킨케어",
+      "sub_category": "로션",
+      "run_id": "20260910",
+      "file_name": "part_0003.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/로션/run_id=20260910/part_0004.json",
+      "main_category": "스킨케어",
+      "sub_category": "로션",
+      "run_id": "20260910",
+      "file_name": "part_0004.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/로션/run_id=20260910/part_0005.json",
+      "main_category": "스킨케어",
+      "sub_category": "로션",
+      "run_id": "20260910",
+      "file_name": "part_0005.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/로션/run_id=20260910/part_0006.json",
+      "main_category": "스킨케어",
+      "sub_category": "로션",
+      "run_id": "20260910",
+      "file_name": "part_0006.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/로션/run_id=20260910/part_0007.json",
+      "main_category": "스킨케어",
+      "sub_category": "로션",
+      "run_id": "20260910",
+      "file_name": "part_0007.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/로션/run_id=20260910/part_0008.json",
+      "main_category": "스킨케어",
+      "sub_category": "로션",
+      "run_id": "20260910",
+      "file_name": "part_0008.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/로션/run_id=20260910/part_0009.json",
+      "main_category": "스킨케어",
+      "sub_category": "로션",
+      "run_id": "20260910",
+      "file_name": "part_0009.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/로션/run_id=20260910/part_0010.json",
+      "main_category": "스킨케어",
+      "sub_category": "로션",
+      "run_id": "20260910",
+      "file_name": "part_0010.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/로션/run_id=20260910/part_0011.json",
+      "main_category": "스킨케어",
+      "sub_category": "로션",
+      "run_id": "20260910",
+      "file_name": "part_0011.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/로션/run_id=20260910/part_0012.json",
+      "main_category": "스킨케어",
+      "sub_category": "로션",
+      "run_id": "20260910",
+      "file_name": "part_0012.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/로션/run_id=20260910/part_0013.json",
+      "main_category": "스킨케어",
+      "sub_category": "로션",
+      "run_id": "20260910",
+      "file_name": "part_0013.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/미스트-오일/run_id=20260910/part_0000.json",
+      "main_category": "스킨케어",
+      "sub_category": "미스트-오일",
+      "run_id": "20260910",
+      "file_name": "part_0000.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/미스트-오일/run_id=20260910/part_0001.json",
+      "main_category": "스킨케어",
+      "sub_category": "미스트-오일",
+      "run_id": "20260910",
+      "file_name": "part_0001.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/미스트-오일/run_id=20260910/part_0002.json",
+      "main_category": "스킨케어",
+      "sub_category": "미스트-오일",
+      "run_id": "20260910",
+      "file_name": "part_0002.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/미스트-오일/run_id=20260910/part_0003.json",
+      "main_category": "스킨케어",
+      "sub_category": "미스트-오일",
+      "run_id": "20260910",
+      "file_name": "part_0003.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/미스트-오일/run_id=20260910/part_0004.json",
+      "main_category": "스킨케어",
+      "sub_category": "미스트-오일",
+      "run_id": "20260910",
+      "file_name": "part_0004.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/미스트-오일/run_id=20260910/part_0005.json",
+      "main_category": "스킨케어",
+      "sub_category": "미스트-오일",
+      "run_id": "20260910",
+      "file_name": "part_0005.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/미스트-오일/run_id=20260910/part_0006.json",
+      "main_category": "스킨케어",
+      "sub_category": "미스트-오일",
+      "run_id": "20260910",
+      "file_name": "part_0006.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/미스트-오일/run_id=20260910/part_0007.json",
+      "main_category": "스킨케어",
+      "sub_category": "미스트-오일",
+      "run_id": "20260910",
+      "file_name": "part_0007.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/미스트-오일/run_id=20260910/part_0008.json",
+      "main_category": "스킨케어",
+      "sub_category": "미스트-오일",
+      "run_id": "20260910",
+      "file_name": "part_0008.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/스킨-토너/run_id=20260913/part_0000.json",
+      "main_category": "스킨케어",
+      "sub_category": "스킨-토너",
+      "run_id": "20260913",
+      "file_name": "part_0000.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/스킨-토너/run_id=20260913/part_0001.json",
+      "main_category": "스킨케어",
+      "sub_category": "스킨-토너",
+      "run_id": "20260913",
+      "file_name": "part_0001.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0000.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0000.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0001.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0001.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0002.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0002.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0003.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0003.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0004.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0004.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0005.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0005.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0006.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0006.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0007.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0007.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0008.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0008.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0009.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0009.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0010.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0010.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0011.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0011.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0012.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0012.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0013.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0013.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0014.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0014.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0015.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0015.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0016.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0016.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0017.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0017.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0018.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0018.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0019.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0019.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0020.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0020.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0021.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0021.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0022.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0022.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0023.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0023.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0024.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0024.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0025.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0025.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0026.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0026.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0027.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0027.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0028.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0028.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0029.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0029.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0030.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0030.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0031.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0031.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0032.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0032.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0033.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0033.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0034.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0034.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0035.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0035.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0036.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0036.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0037.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0037.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0038.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0038.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0039.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0039.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0040.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0040.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0041.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0041.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0042.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0042.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0043.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0043.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0044.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0044.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/에센스-세럼-앰플/run_id=20260910/part_0045.json",
+      "main_category": "스킨케어",
+      "sub_category": "에센스-세럼-앰플",
+      "run_id": "20260910",
+      "file_name": "part_0045.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0000.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0000.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0001.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0001.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0002.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0002.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0003.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0003.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0004.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0004.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0005.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0005.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0006.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0006.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0007.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0007.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0008.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0008.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0009.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0009.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0010.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0010.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0011.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0011.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0012.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0012.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0013.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0013.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0014.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0014.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0015.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0015.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0016.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0016.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0017.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0017.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0018.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0018.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0019.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0019.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0020.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0020.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0021.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0021.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0022.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0022.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0023.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0023.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0024.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0024.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0025.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0025.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0026.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0026.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0027.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0027.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0028.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0028.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0029.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0029.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0030.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0030.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0031.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0031.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0032.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0032.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0033.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0033.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0034.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0034.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0035.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0035.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0036.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0036.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/스킨케어/크림/run_id=20260913/part_0037.json",
+      "main_category": "스킨케어",
+      "sub_category": "크림",
+      "run_id": "20260913",
+      "file_name": "part_0037.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/오일-밤/run_id=20260913/part_0000.json",
+      "main_category": "클렌징",
+      "sub_category": "오일-밤",
+      "run_id": "20260913",
+      "file_name": "part_0000.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/오일-밤/run_id=20260913/part_0001.json",
+      "main_category": "클렌징",
+      "sub_category": "오일-밤",
+      "run_id": "20260913",
+      "file_name": "part_0001.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/오일-밤/run_id=20260913/part_0002.json",
+      "main_category": "클렌징",
+      "sub_category": "오일-밤",
+      "run_id": "20260913",
+      "file_name": "part_0002.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/오일-밤/run_id=20260913/part_0003.json",
+      "main_category": "클렌징",
+      "sub_category": "오일-밤",
+      "run_id": "20260913",
+      "file_name": "part_0003.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/오일-밤/run_id=20260913/part_0004.json",
+      "main_category": "클렌징",
+      "sub_category": "오일-밤",
+      "run_id": "20260913",
+      "file_name": "part_0004.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/오일-밤/run_id=20260913/part_0005.json",
+      "main_category": "클렌징",
+      "sub_category": "오일-밤",
+      "run_id": "20260913",
+      "file_name": "part_0005.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/오일-밤/run_id=20260913/part_0006.json",
+      "main_category": "클렌징",
+      "sub_category": "오일-밤",
+      "run_id": "20260913",
+      "file_name": "part_0006.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/오일-밤/run_id=20260913/part_0007.json",
+      "main_category": "클렌징",
+      "sub_category": "오일-밤",
+      "run_id": "20260913",
+      "file_name": "part_0007.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/오일-밤/run_id=20260913/part_0008.json",
+      "main_category": "클렌징",
+      "sub_category": "오일-밤",
+      "run_id": "20260913",
+      "file_name": "part_0008.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/오일-밤/run_id=20260913/part_0009.json",
+      "main_category": "클렌징",
+      "sub_category": "오일-밤",
+      "run_id": "20260913",
+      "file_name": "part_0009.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/오일-밤/run_id=20260913/part_0010.json",
+      "main_category": "클렌징",
+      "sub_category": "오일-밤",
+      "run_id": "20260913",
+      "file_name": "part_0010.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/오일-밤/run_id=20260913/part_0011.json",
+      "main_category": "클렌징",
+      "sub_category": "오일-밤",
+      "run_id": "20260913",
+      "file_name": "part_0011.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/워터-밀크/run_id=20260910/part_0000.json",
+      "main_category": "클렌징",
+      "sub_category": "워터-밀크",
+      "run_id": "20260910",
+      "file_name": "part_0000.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/워터-밀크/run_id=20260910/part_0001.json",
+      "main_category": "클렌징",
+      "sub_category": "워터-밀크",
+      "run_id": "20260910",
+      "file_name": "part_0001.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/워터-밀크/run_id=20260910/part_0002.json",
+      "main_category": "클렌징",
+      "sub_category": "워터-밀크",
+      "run_id": "20260910",
+      "file_name": "part_0002.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/워터-밀크/run_id=20260910/part_0003.json",
+      "main_category": "클렌징",
+      "sub_category": "워터-밀크",
+      "run_id": "20260910",
+      "file_name": "part_0003.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/워터-밀크/run_id=20260910/part_0004.json",
+      "main_category": "클렌징",
+      "sub_category": "워터-밀크",
+      "run_id": "20260910",
+      "file_name": "part_0004.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/워터-밀크/run_id=20260910/part_0005.json",
+      "main_category": "클렌징",
+      "sub_category": "워터-밀크",
+      "run_id": "20260910",
+      "file_name": "part_0005.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/클렌징폼-젤/run_id=20260910/part_0000.json",
+      "main_category": "클렌징",
+      "sub_category": "클렌징폼-젤",
+      "run_id": "20260910",
+      "file_name": "part_0000.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/클렌징폼-젤/run_id=20260910/part_0001.json",
+      "main_category": "클렌징",
+      "sub_category": "클렌징폼-젤",
+      "run_id": "20260910",
+      "file_name": "part_0001.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/클렌징폼-젤/run_id=20260910/part_0002.json",
+      "main_category": "클렌징",
+      "sub_category": "클렌징폼-젤",
+      "run_id": "20260910",
+      "file_name": "part_0002.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/클렌징폼-젤/run_id=20260910/part_0003.json",
+      "main_category": "클렌징",
+      "sub_category": "클렌징폼-젤",
+      "run_id": "20260910",
+      "file_name": "part_0003.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/클렌징폼-젤/run_id=20260910/part_0004.json",
+      "main_category": "클렌징",
+      "sub_category": "클렌징폼-젤",
+      "run_id": "20260910",
+      "file_name": "part_0004.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/클렌징폼-젤/run_id=20260910/part_0005.json",
+      "main_category": "클렌징",
+      "sub_category": "클렌징폼-젤",
+      "run_id": "20260910",
+      "file_name": "part_0005.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/클렌징폼-젤/run_id=20260910/part_0006.json",
+      "main_category": "클렌징",
+      "sub_category": "클렌징폼-젤",
+      "run_id": "20260910",
+      "file_name": "part_0006.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/클렌징폼-젤/run_id=20260910/part_0007.json",
+      "main_category": "클렌징",
+      "sub_category": "클렌징폼-젤",
+      "run_id": "20260910",
+      "file_name": "part_0007.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/클렌징폼-젤/run_id=20260910/part_0008.json",
+      "main_category": "클렌징",
+      "sub_category": "클렌징폼-젤",
+      "run_id": "20260910",
+      "file_name": "part_0008.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/클렌징폼-젤/run_id=20260910/part_0009.json",
+      "main_category": "클렌징",
+      "sub_category": "클렌징폼-젤",
+      "run_id": "20260910",
+      "file_name": "part_0009.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/클렌징폼-젤/run_id=20260910/part_0010.json",
+      "main_category": "클렌징",
+      "sub_category": "클렌징폼-젤",
+      "run_id": "20260910",
+      "file_name": "part_0010.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/클렌징폼-젤/run_id=20260910/part_0011.json",
+      "main_category": "클렌징",
+      "sub_category": "클렌징폼-젤",
+      "run_id": "20260910",
+      "file_name": "part_0011.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/클렌징폼-젤/run_id=20260910/part_0012.json",
+      "main_category": "클렌징",
+      "sub_category": "클렌징폼-젤",
+      "run_id": "20260910",
+      "file_name": "part_0012.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/클렌징폼-젤/run_id=20260910/part_0013.json",
+      "main_category": "클렌징",
+      "sub_category": "클렌징폼-젤",
+      "run_id": "20260910",
+      "file_name": "part_0013.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/클렌징폼-젤/run_id=20260910/part_0014.json",
+      "main_category": "클렌징",
+      "sub_category": "클렌징폼-젤",
+      "run_id": "20260910",
+      "file_name": "part_0014.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/클렌징폼-젤/run_id=20260910/part_0015.json",
+      "main_category": "클렌징",
+      "sub_category": "클렌징폼-젤",
+      "run_id": "20260910",
+      "file_name": "part_0015.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/클렌징폼-젤/run_id=20260910/part_0016.json",
+      "main_category": "클렌징",
+      "sub_category": "클렌징폼-젤",
+      "run_id": "20260910",
+      "file_name": "part_0016.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/클렌징폼-젤/run_id=20260910/part_0017.json",
+      "main_category": "클렌징",
+      "sub_category": "클렌징폼-젤",
+      "run_id": "20260910",
+      "file_name": "part_0017.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/클렌징폼-젤/run_id=20260910/part_0018.json",
+      "main_category": "클렌징",
+      "sub_category": "클렌징폼-젤",
+      "run_id": "20260910",
+      "file_name": "part_0018.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/클렌징폼-젤/run_id=20260910/part_0019.json",
+      "main_category": "클렌징",
+      "sub_category": "클렌징폼-젤",
+      "run_id": "20260910",
+      "file_name": "part_0019.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/클렌징폼-젤/run_id=20260910/part_0020.json",
+      "main_category": "클렌징",
+      "sub_category": "클렌징폼-젤",
+      "run_id": "20260910",
+      "file_name": "part_0020.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/클렌징폼-젤/run_id=20260910/part_0021.json",
+      "main_category": "클렌징",
+      "sub_category": "클렌징폼-젤",
+      "run_id": "20260910",
+      "file_name": "part_0021.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/클렌징폼-젤/run_id=20260910/part_0022.json",
+      "main_category": "클렌징",
+      "sub_category": "클렌징폼-젤",
+      "run_id": "20260910",
+      "file_name": "part_0022.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/클렌징폼-젤/run_id=20260910/part_0023.json",
+      "main_category": "클렌징",
+      "sub_category": "클렌징폼-젤",
+      "run_id": "20260910",
+      "file_name": "part_0023.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/클렌징폼-젤/run_id=20260910/part_0024.json",
+      "main_category": "클렌징",
+      "sub_category": "클렌징폼-젤",
+      "run_id": "20260910",
+      "file_name": "part_0024.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/클렌징폼-젤/run_id=20260910/part_0025.json",
+      "main_category": "클렌징",
+      "sub_category": "클렌징폼-젤",
+      "run_id": "20260910",
+      "file_name": "part_0025.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/필링&스크럽/run_id=20260913/part_0000.json",
+      "main_category": "클렌징",
+      "sub_category": "필링&스크럽",
+      "run_id": "20260913",
+      "file_name": "part_0000.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/필링&스크럽/run_id=20260913/part_0001.json",
+      "main_category": "클렌징",
+      "sub_category": "필링&스크럽",
+      "run_id": "20260913",
+      "file_name": "part_0001.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/필링&스크럽/run_id=20260913/part_0002.json",
+      "main_category": "클렌징",
+      "sub_category": "필링&스크럽",
+      "run_id": "20260913",
+      "file_name": "part_0002.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/필링&스크럽/run_id=20260913/part_0003.json",
+      "main_category": "클렌징",
+      "sub_category": "필링&스크럽",
+      "run_id": "20260913",
+      "file_name": "part_0003.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/필링&스크럽/run_id=20260913/part_0004.json",
+      "main_category": "클렌징",
+      "sub_category": "필링&스크럽",
+      "run_id": "20260913",
+      "file_name": "part_0004.json"
+    },
+    {
+      "path": "s3://oliveyoung-crawl-data/oliveyoung/클렌징/필링&스크럽/run_id=20260913/part_0005.json",
+      "main_category": "클렌징",
+      "sub_category": "필링&스크럽",
+      "run_id": "20260913",
+      "file_name": "part_0005.json"
+    }
+  ],
+  "unparsed_files": []
+}

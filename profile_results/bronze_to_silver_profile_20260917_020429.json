@@ -1,0 +1,303 @@
+{
+  "run": {
+    "job": "iceberg_bronze_to_silver",
+    "run_id": "iceberg_bronze_to_silver_20260917_020429",
+    "status": "SUCCESS",
+    "started_at": "2026-09-17T02:04:29+0000",
+    "duration_seconds": 71.069676,
+    "pid": 7,
+    "cpu_affinity": [0, 1],
+    "current_cpu": null,
+    "input": {
+      "bronze_files": 279,
+      "bronze_rows": 5373
+    },
+    "output": {
+      "silver_rows": 3306,
+      "error_rows": 2333,
+      "total_rows": 5639
+    },
+    "peak_rss_mb": 657.602
+  },
+  "summary": {
+    "top_bottlenecks": [
+      {
+        "stage": "bronze_load",
+        "wall_seconds": 33.695395,
+        "share_of_total_percent": 47.4,
+        "likely_reason": "S3/network/DuckDB httpfs wait from reading many small JSON files"
+      },
+      {
+        "stage": "iceberg_write",
+        "wall_seconds": 17.077479,
+        "share_of_total_percent": 24.0,
+        "likely_reason": "Iceberg overwrite/append, Parquet/S3 writes, and commit metadata work"
+      },
+      {
+        "stage": "process_pipeline",
+        "wall_seconds": 7.83574,
+        "share_of_total_percent": 11.0,
+        "likely_reason": "CPU-heavy regex/string cleaning plus ingredient matching"
+      },
+      {
+        "stage": "dictionary_load",
+        "wall_seconds": 6.267618,
+        "share_of_total_percent": 8.8,
+        "likely_reason": "Glue/Iceberg table reads plus Aho-Corasick build"
+      }
+    ],
+    "conclusion": "The dominant cost is not NUMA or in-memory preprocessing. It is mostly I/O: reading many small Bronze JSON files from S3 and writing multiple Iceberg tables."
+  },
+  "stages": [
+    {
+      "stage": "duckdb_connection",
+      "wall_seconds": 3.489301,
+      "cpu_seconds": 2.328366,
+      "cpu_wall_ratio": 0.667287,
+      "rows_in": null,
+      "rows_out": null,
+      "rows_per_second": null,
+      "peak_rss_mb": 247.992,
+      "metadata": {}
+    },
+    {
+      "stage": "bronze_load",
+      "wall_seconds": 33.695395,
+      "cpu_seconds": 8.232619,
+      "cpu_wall_ratio": 0.244325,
+      "rows_in": null,
+      "rows_out": 5373,
+      "rows_per_second": 159.458,
+      "peak_rss_mb": 325.793,
+      "metadata": {}
+    },
+    {
+      "stage": "dictionary_load",
+      "wall_seconds": 6.267618,
+      "cpu_seconds": 2.594339,
+      "cpu_wall_ratio": 0.413927,
+      "rows_in": null,
+      "rows_out": null,
+      "rows_per_second": null,
+      "peak_rss_mb": 373.043,
+      "metadata": {}
+    },
+    {
+      "stage": "product_name_norm_compile",
+      "wall_seconds": 0.001863,
+      "cpu_seconds": 0.001406,
+      "cpu_wall_ratio": 0.754479,
+      "rows_in": 23,
+      "rows_out": 23,
+      "rows_per_second": 12343.103,
+      "peak_rss_mb": 373.043,
+      "metadata": {}
+    },
+    {
+      "stage": "clean_rows",
+      "wall_seconds": 5.608466,
+      "cpu_seconds": 4.64241,
+      "cpu_wall_ratio": 0.82775,
+      "rows_in": 5373,
+      "rows_out": 5373,
+      "rows_per_second": 958.016,
+      "peak_rss_mb": 376.793,
+      "metadata": {
+        "interim_rows": 4779,
+        "error_rows": 594
+      }
+    },
+    {
+      "stage": "dedup",
+      "wall_seconds": 0.390589,
+      "cpu_seconds": 0.188452,
+      "cpu_wall_ratio": 0.482481,
+      "rows_in": 4779,
+      "rows_out": 4779,
+      "rows_per_second": 12235.359,
+      "peak_rss_mb": 422.957,
+      "metadata": {
+        "deduped_rows": 3385,
+        "duplicate_errors": 1394
+      }
+    },
+    {
+      "stage": "ingredient_match",
+      "wall_seconds": 1.419005,
+      "cpu_seconds": 0.982225,
+      "cpu_wall_ratio": 0.692192,
+      "rows_in": 3385,
+      "rows_out": 3651,
+      "rows_per_second": 2572.929,
+      "peak_rss_mb": 431.332,
+      "metadata": {
+        "silver_rows": 3306,
+        "match_errors": 345
+      }
+    },
+    {
+      "stage": "build_output_dataframes",
+      "wall_seconds": 0.399738,
+      "cpu_seconds": 0.282633,
+      "cpu_wall_ratio": 0.707046,
+      "rows_in": 5639,
+      "rows_out": 5639,
+      "rows_per_second": 14106.74,
+      "peak_rss_mb": 439.207,
+      "metadata": {
+        "silver_rows": 3306,
+        "error_rows": 2333
+      }
+    },
+    {
+      "stage": "process_pipeline",
+      "wall_seconds": 7.83574,
+      "cpu_seconds": 6.110305,
+      "cpu_wall_ratio": 0.779799,
+      "rows_in": 5373,
+      "rows_out": 5639,
+      "rows_per_second": 719.651,
+      "peak_rss_mb": 439.207,
+      "metadata": {
+        "silver_rows": 3306,
+        "error_rows": 2333
+      }
+    },
+    {
+      "stage": "pandas_to_arrow_current",
+      "wall_seconds": 0.307794,
+      "cpu_seconds": 0.153442,
+      "cpu_wall_ratio": 0.498524,
+      "rows_in": 3306,
+      "rows_out": 3306,
+      "rows_per_second": 10740.962,
+      "peak_rss_mb": 445.727,
+      "metadata": {}
+    },
+    {
+      "stage": "iceberg_current_write",
+      "wall_seconds": 6.358711,
+      "cpu_seconds": 1.315986,
+      "cpu_wall_ratio": 0.206958,
+      "rows_in": 3306,
+      "rows_out": 3306,
+      "rows_per_second": 519.917,
+      "peak_rss_mb": 559.852,
+      "metadata": {}
+    },
+    {
+      "stage": "pandas_to_arrow_history",
+      "wall_seconds": 0.303892,
+      "cpu_seconds": 0.145695,
+      "cpu_wall_ratio": 0.479431,
+      "rows_in": 3306,
+      "rows_out": 3306,
+      "rows_per_second": 10878.874,
+      "peak_rss_mb": 564.352,
+      "metadata": {}
+    },
+    {
+      "stage": "iceberg_history_write",
+      "wall_seconds": 3.16146,
+      "cpu_seconds": 0.641081,
+      "cpu_wall_ratio": 0.20278,
+      "rows_in": 3306,
+      "rows_out": 3306,
+      "rows_per_second": 1045.719,
+      "peak_rss_mb": 595.852,
+      "metadata": {}
+    },
+    {
+      "stage": "pandas_to_arrow_error",
+      "wall_seconds": 0.158845,
+      "cpu_seconds": 0.112314,
+      "cpu_wall_ratio": 0.707066,
+      "rows_in": 2333,
+      "rows_out": 2333,
+      "rows_per_second": 14687.294,
+      "peak_rss_mb": 597.602,
+      "metadata": {}
+    },
+    {
+      "stage": "iceberg_error_write",
+      "wall_seconds": 4.066276,
+      "cpu_seconds": 0.801113,
+      "cpu_wall_ratio": 0.197014,
+      "rows_in": 2333,
+      "rows_out": 2333,
+      "rows_per_second": 573.744,
+      "peak_rss_mb": 612.477,
+      "metadata": {}
+    },
+    {
+      "stage": "iceberg_write",
+      "wall_seconds": 17.077479,
+      "cpu_seconds": 3.713108,
+      "cpu_wall_ratio": 0.217427,
+      "rows_in": 5639,
+      "rows_out": 5639,
+      "rows_per_second": 330.201,
+      "peak_rss_mb": 612.477,
+      "metadata": {}
+    },
+    {
+      "stage": "csv_silver_prepare",
+      "wall_seconds": 0.079462,
+      "cpu_seconds": 0.058902,
+      "cpu_wall_ratio": 0.741265,
+      "rows_in": 3306,
+      "rows_out": 3306,
+      "rows_per_second": 41605.012,
+      "peak_rss_mb": 612.852,
+      "metadata": {}
+    },
+    {
+      "stage": "csv_silver_upload",
+      "wall_seconds": 1.701871,
+      "cpu_seconds": 0.496488,
+      "cpu_wall_ratio": 0.291731,
+      "rows_in": 3306,
+      "rows_out": 3306,
+      "rows_per_second": 1942.568,
+      "peak_rss_mb": 657.602,
+      "metadata": {}
+    },
+    {
+      "stage": "csv_error_upload",
+      "wall_seconds": 0.920445,
+      "cpu_seconds": 0.209776,
+      "cpu_wall_ratio": 0.227907,
+      "rows_in": 2333,
+      "rows_out": 2333,
+      "rows_per_second": 2534.643,
+      "peak_rss_mb": 657.602,
+      "metadata": {}
+    },
+    {
+      "stage": "csv_s3_write",
+      "wall_seconds": 2.703539,
+      "cpu_seconds": 0.766058,
+      "cpu_wall_ratio": 0.283354,
+      "rows_in": 5639,
+      "rows_out": 5639,
+      "rows_per_second": 2085.785,
+      "peak_rss_mb": 657.602,
+      "metadata": {}
+    },
+    {
+      "stage": "total",
+      "wall_seconds": 71.069676,
+      "cpu_seconds": 23.745224,
+      "cpu_wall_ratio": 0.334112,
+      "rows_in": null,
+      "rows_out": 5639,
+      "rows_per_second": 79.345,
+      "peak_rss_mb": 657.602,
+      "metadata": {
+        "bronze_rows": 5373,
+        "silver_rows": 3306,
+        "error_rows": 2333
+      }
+    }
+  ]
+}
