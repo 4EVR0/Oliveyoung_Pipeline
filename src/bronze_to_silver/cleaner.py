@@ -12,6 +12,7 @@
 
 import re
 import uuid
+from typing import TYPE_CHECKING
 
 import pandas as pd
 import ahocorasick
@@ -19,6 +20,9 @@ import ahocorasick
 from src.bronze_to_silver.ac_builder import search_with_ac
 from models.pipeline_models import ErrorRecord
 from models.batch_metadata import BatchMetadata, add_batch_metadata, create_batch_metadata
+
+if TYPE_CHECKING:
+    from src.bronze_to_silver.profiler import PipelineProfiler
 
 
 # ==========================================
@@ -652,6 +656,7 @@ def process_pipeline(
     garbage_config: dict = None,
     product_name_norm_list: list[dict] = None,
     batch: BatchMetadata = None,
+    profiler: "PipelineProfiler" = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Bronze raw DataFrame을 받아 silver / error DataFrame으로 전처리합니다.
@@ -675,12 +680,25 @@ def process_pipeline(
     batch = batch or create_batch_metadata("bronze_to_silver")
 
     # product_name_norm 패턴 컴파일 (한 번만)
-    norm_compiled = _compile_product_name_norms(product_name_norm_list or [])
+    if profiler:
+        with profiler.step("product_name_norm_compile", rows_in=len(product_name_norm_list or [])) as step:
+            norm_compiled = _compile_product_name_norms(product_name_norm_list or [])
+            step.set_rows_out(len(norm_compiled))
+    else:
+        norm_compiled = _compile_product_name_norms(product_name_norm_list or [])
 
     # [Step 1~9] 행별 정제
-    interim_list, error_records = _clean_rows(
-        df, typo_list, typo_regex_list, garbage_config, norm_compiled
-    )
+    if profiler:
+        with profiler.step("clean_rows", rows_in=len(df)) as step:
+            interim_list, error_records = _clean_rows(
+                df, typo_list, typo_regex_list, garbage_config, norm_compiled
+            )
+            step.set_rows_out(len(interim_list) + len(error_records))
+            step.set_metadata(interim_rows=len(interim_list), error_rows=len(error_records))
+    else:
+        interim_list, error_records = _clean_rows(
+            df, typo_list, typo_regex_list, garbage_config, norm_compiled
+        )
 
     if not interim_list:
         error_df = pd.DataFrame([r.to_dict() for r in error_records])
@@ -688,17 +706,37 @@ def process_pipeline(
         return pd.DataFrame(), error_df
 
     # [Step 10] 중복 제거
-    deduped_df, duplicate_errors = _dedup_interim(interim_list)
+    if profiler:
+        with profiler.step("dedup", rows_in=len(interim_list)) as step:
+            deduped_df, duplicate_errors = _dedup_interim(interim_list)
+            step.set_rows_out(len(deduped_df) + len(duplicate_errors))
+            step.set_metadata(deduped_rows=len(deduped_df), duplicate_errors=len(duplicate_errors))
+    else:
+        deduped_df, duplicate_errors = _dedup_interim(interim_list)
     error_records.extend(duplicate_errors)
 
     # [Step 11~13] 성분 매칭
-    silver_records, match_errors = _match_ingredients(deduped_df, ac_automaton)
+    if profiler:
+        with profiler.step("ingredient_match", rows_in=len(deduped_df)) as step:
+            silver_records, match_errors = _match_ingredients(deduped_df, ac_automaton)
+            step.set_rows_out(len(silver_records) + len(match_errors))
+            step.set_metadata(silver_rows=len(silver_records), match_errors=len(match_errors))
+    else:
+        silver_records, match_errors = _match_ingredients(deduped_df, ac_automaton)
     error_records.extend(match_errors)
 
-    silver_df = pd.DataFrame(silver_records)
-    error_df  = pd.DataFrame([r.to_dict() for r in error_records])
-
-    for df_ in (silver_df, error_df):
-        add_batch_metadata(df_, batch)
+    if profiler:
+        with profiler.step("build_output_dataframes", rows_in=len(silver_records) + len(error_records)) as step:
+            silver_df = pd.DataFrame(silver_records)
+            error_df  = pd.DataFrame([r.to_dict() for r in error_records])
+            for df_ in (silver_df, error_df):
+                add_batch_metadata(df_, batch)
+            step.set_rows_out(len(silver_df) + len(error_df))
+            step.set_metadata(silver_rows=len(silver_df), error_rows=len(error_df))
+    else:
+        silver_df = pd.DataFrame(silver_records)
+        error_df  = pd.DataFrame([r.to_dict() for r in error_records])
+        for df_ in (silver_df, error_df):
+            add_batch_metadata(df_, batch)
 
     return silver_df, error_df

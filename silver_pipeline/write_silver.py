@@ -6,7 +6,7 @@ Silver / Silver Error 테이블 Iceberg write + CSV 저장 모듈
 """
 
 import io
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 import boto3
 import pandas as pd
@@ -15,6 +15,9 @@ from pyiceberg.types import StringType, TimestamptzType
 
 from config.settings import S3, OliveyoungIceberg
 from oliveyoung_common.batch import build_run_id
+
+if TYPE_CHECKING:
+    from src.bronze_to_silver.profiler import PipelineProfiler
 
 
 # ==========================================
@@ -241,6 +244,7 @@ def _build_arrow_table_for_error(df: pd.DataFrame, table) -> pa.Table:
 def write_to_iceberg(
     silver_df: pd.DataFrame,
     error_df: pd.DataFrame,
+    profiler: "PipelineProfiler" = None,
 ) -> None:
     """
     silver / error DataFrame을 Iceberg 테이블에 기록합니다.
@@ -255,24 +259,48 @@ def write_to_iceberg(
     catalog = OliveyoungIceberg.get_catalog()
 
     if not silver_df.empty:
-        # current — overwrite
+        # current - overwrite
         current_table = _load_and_evolve_table(catalog, OliveyoungIceberg.SILVER_CURRENT_TABLE)
-        current_arrow = _build_arrow_table_for_silver(silver_df, current_table)
-        current_table.overwrite(current_arrow)
+        if profiler:
+            with profiler.step("pandas_to_arrow_current", rows_in=len(silver_df)) as step:
+                current_arrow = _build_arrow_table_for_silver(silver_df, current_table)
+                step.set_rows_out(current_arrow.num_rows)
+            with profiler.step("iceberg_current_write", rows_in=current_arrow.num_rows) as step:
+                current_table.overwrite(current_arrow)
+                step.set_rows_out(current_arrow.num_rows)
+        else:
+            current_arrow = _build_arrow_table_for_silver(silver_df, current_table)
+            current_table.overwrite(current_arrow)
         print(f"   Iceberg overwrite 완료: {OliveyoungIceberg.SILVER_CURRENT_TABLE} ({len(silver_df)}건)")
 
-        # history — append
+        # history - append
         history_table = _load_and_evolve_table(catalog, OliveyoungIceberg.SILVER_HISTORY_TABLE)
-        history_arrow = _build_arrow_table_for_silver(silver_df, history_table)
-        history_table.append(history_arrow)
+        if profiler:
+            with profiler.step("pandas_to_arrow_history", rows_in=len(silver_df)) as step:
+                history_arrow = _build_arrow_table_for_silver(silver_df, history_table)
+                step.set_rows_out(history_arrow.num_rows)
+            with profiler.step("iceberg_history_write", rows_in=history_arrow.num_rows) as step:
+                history_table.append(history_arrow)
+                step.set_rows_out(history_arrow.num_rows)
+        else:
+            history_arrow = _build_arrow_table_for_silver(silver_df, history_table)
+            history_table.append(history_arrow)
         print(f"   Iceberg append 완료:    {OliveyoungIceberg.SILVER_HISTORY_TABLE} ({len(silver_df)}건)")
     else:
         print("   silver 데이터 없음 — Iceberg write 건너뜀")
 
     if not error_df.empty:
         error_table = _load_and_evolve_table(catalog, OliveyoungIceberg.SILVER_ERROR_TABLE)
-        error_arrow = _build_arrow_table_for_error(error_df, error_table)
-        error_table.overwrite(error_arrow)
+        if profiler:
+            with profiler.step("pandas_to_arrow_error", rows_in=len(error_df)) as step:
+                error_arrow = _build_arrow_table_for_error(error_df, error_table)
+                step.set_rows_out(error_arrow.num_rows)
+            with profiler.step("iceberg_error_write", rows_in=error_arrow.num_rows) as step:
+                error_table.overwrite(error_arrow)
+                step.set_rows_out(error_arrow.num_rows)
+        else:
+            error_arrow = _build_arrow_table_for_error(error_df, error_table)
+            error_table.overwrite(error_arrow)
         print(f"   Iceberg overwrite 완료: {OliveyoungIceberg.SILVER_ERROR_TABLE} ({len(error_df)}건)")
     else:
         print("   error 데이터 없음 — Iceberg write 건너뜀")
@@ -282,7 +310,11 @@ def write_to_iceberg(
 # CSV 저장 (S3 data_csv/)
 # ==========================================
 
-def write_csv_to_s3(silver_df: pd.DataFrame, error_df: pd.DataFrame) -> None:
+def write_csv_to_s3(
+    silver_df: pd.DataFrame,
+    error_df: pd.DataFrame,
+    profiler: "PipelineProfiler" = None,
+) -> None:
     """
     silver / error DataFrame을 S3 data_csv/ 폴더에 CSV로 저장합니다.
 
@@ -294,25 +326,50 @@ def write_csv_to_s3(silver_df: pd.DataFrame, error_df: pd.DataFrame) -> None:
     prefix = S3.DATA_CSV_PATH.removeprefix(f"s3://{S3.BUCKET}/")
 
     if not silver_df.empty:
-        csv_df = silver_df.copy()
+        if profiler:
+            with profiler.step("csv_silver_prepare", rows_in=len(silver_df)) as step:
+                csv_df = silver_df.copy()
 
-        if "product_ingredients" in csv_df.columns:
-            csv_df["product_ingredients"] = csv_df["product_ingredients"].apply(
-                lambda v: "|".join(v) if isinstance(v, list) else v
-            )
+                if "product_ingredients" in csv_df.columns:
+                    csv_df["product_ingredients"] = csv_df["product_ingredients"].apply(
+                        lambda v: "|".join(v) if isinstance(v, list) else v
+                    )
 
-        if "review_stats" in csv_df.columns:
-            csv_df["review_stats"] = csv_df["review_stats"].apply(
-                lambda v: str(v) if v is not None else None
-            )
+                if "review_stats" in csv_df.columns:
+                    csv_df["review_stats"] = csv_df["review_stats"].apply(
+                        lambda v: str(v) if v is not None else None
+                    )
+                step.set_rows_out(len(csv_df))
+        else:
+            csv_df = silver_df.copy()
+
+            if "product_ingredients" in csv_df.columns:
+                csv_df["product_ingredients"] = csv_df["product_ingredients"].apply(
+                    lambda v: "|".join(v) if isinstance(v, list) else v
+                )
+
+            if "review_stats" in csv_df.columns:
+                csv_df["review_stats"] = csv_df["review_stats"].apply(
+                    lambda v: str(v) if v is not None else None
+                )
 
         silver_table_name = OliveyoungIceberg.SILVER_CURRENT_TABLE.split(".")[-1]
         key = f"{prefix}{silver_table_name}_{ts}.csv"
-        _upload_csv(csv_df, key)
+        if profiler:
+            with profiler.step("csv_silver_upload", rows_in=len(csv_df)) as step:
+                _upload_csv(csv_df, key)
+                step.set_rows_out(len(csv_df))
+        else:
+            _upload_csv(csv_df, key)
         print(f"   CSV 저장 완료: s3://{S3.BUCKET}/{key}")
 
     if not error_df.empty:
         error_table_name = OliveyoungIceberg.SILVER_ERROR_TABLE.split(".")[-1]
         key = f"{prefix}{error_table_name}_{ts}.csv"
-        _upload_csv(error_df, key)
+        if profiler:
+            with profiler.step("csv_error_upload", rows_in=len(error_df)) as step:
+                _upload_csv(error_df, key)
+                step.set_rows_out(len(error_df))
+        else:
+            _upload_csv(error_df, key)
         print(f"   CSV 저장 완료: s3://{S3.BUCKET}/{key}")

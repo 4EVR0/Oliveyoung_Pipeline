@@ -16,6 +16,7 @@ from src.bronze_to_silver.ac_builder import (
     build_ahocorasick,
 )
 from src.bronze_to_silver.cleaner import process_pipeline
+from src.bronze_to_silver.profiler import PipelineProfiler
 from silver_pipeline.write_silver import write_to_iceberg, write_csv_to_s3
 
 
@@ -86,28 +87,56 @@ def load_dictionaries() -> Dictionaries:
 def run_pipeline():
     """Bronze → Silver 전처리 파이프라인 전체를 실행합니다."""
     print("=== Bronze → Silver 전처리 시작 ===\n")
+    profiler = PipelineProfiler()
 
-    print("1. DuckDB 커넥션 설정...")
-    con = DuckDB.get_connection()
+    succeeded = False
+    try:
+        with profiler.step("total") as total_step:
+            print("1. DuckDB 커넥션 설정...")
+            with profiler.step("duckdb_connection"):
+                con = DuckDB.get_connection()
 
-    raw_df = load_bronze_data(con)
-    dicts  = load_dictionaries()
+            with profiler.step("bronze_load") as step:
+                raw_df = load_bronze_data(con)
+                step.set_rows_out(len(raw_df))
 
-    print("9. 전처리 파이프라인 실행...")
-    silver_df, error_df = process_pipeline(
-        df                     = raw_df,
-        ac_automaton           = dicts.ac_automaton,
-        typo_list              = dicts.typo_list,
-        typo_regex_list        = dicts.typo_regex_list,
-        garbage_config         = dicts.garbage_config,
-        product_name_norm_list = dicts.product_name_norm_list,
-    )
-    print(f"   정상: {len(silver_df)}건 / 에러: {len(error_df)}건\n")
+            with profiler.step("dictionary_load"):
+                dicts = load_dictionaries()
 
-    print("10. Iceberg write...")
-    write_to_iceberg(silver_df, error_df)
+            print("9. 전처리 파이프라인 실행...")
+            with profiler.step("process_pipeline", rows_in=len(raw_df)) as step:
+                silver_df, error_df = process_pipeline(
+                    df                     = raw_df,
+                    ac_automaton           = dicts.ac_automaton,
+                    typo_list              = dicts.typo_list,
+                    typo_regex_list        = dicts.typo_regex_list,
+                    garbage_config         = dicts.garbage_config,
+                    product_name_norm_list = dicts.product_name_norm_list,
+                    profiler               = profiler,
+                )
+                step.set_rows_out(len(silver_df) + len(error_df))
+                step.set_metadata(silver_rows=len(silver_df), error_rows=len(error_df))
+            print(f"   정상: {len(silver_df)}건 / 에러: {len(error_df)}건\n")
 
-    print("\n11. CSV 저장 (s3 data_csv/)...")
-    write_csv_to_s3(silver_df, error_df)
+            print("10. Iceberg write...")
+            with profiler.step("iceberg_write", rows_in=len(silver_df) + len(error_df)) as step:
+                write_to_iceberg(silver_df, error_df, profiler=profiler)
+                step.set_rows_out(len(silver_df) + len(error_df))
 
-    print("\n=== 완료 ===")
+            print("\n11. CSV 저장 (s3 data_csv/)...")
+            with profiler.step("csv_s3_write", rows_in=len(silver_df) + len(error_df)) as step:
+                write_csv_to_s3(silver_df, error_df, profiler=profiler)
+                step.set_rows_out(len(silver_df) + len(error_df))
+
+            total_step.set_rows_out(len(silver_df) + len(error_df))
+            total_step.set_metadata(
+                bronze_rows=len(raw_df),
+                silver_rows=len(silver_df),
+                error_rows=len(error_df),
+            )
+            succeeded = True
+    finally:
+        profiler.print_summary()
+
+    if succeeded:
+        print("\n=== 완료 ===")
