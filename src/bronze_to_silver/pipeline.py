@@ -151,6 +151,29 @@ def run_pipeline():
     except Exception as e:
         logger.warning(f"dq_metrics 적재 실패(무시): {e}")
 
+    # 정합성 메트릭(2) — error_type별 레코드 수. 저장만(Discord 리포트 미발송, 비치명).
+    # REJECTED vs UNMAPPED_RESIDUAL 구분용. UNMAPPED_RESIDUAL은 Silver에도 적재된 상품이
+    # error에 남을 수 있어 '상품 수'가 아닌 '레코드 수'로 집계. run 식별은 위 silver_error가 마커.
+    if not error_df.empty and "error_type" in error_df.columns:
+        # error_type null/누락은 value_counts가 기본 제외 → fillna로 UNCLASSIFIED에 담아
+        # 불변식 sum(err_counts) == len(error_df) 보장(dq_api '집계 불완전' 판정의 근거).
+        etypes = error_df["error_type"].fillna("UNCLASSIFIED")
+        err_counts = {f"err_{t}": int(c) for t, c in etypes.value_counts().items()}
+        if err_counts.get("err_UNCLASSIFIED"):
+            logger.warning(f"error_type 누락 {err_counts['err_UNCLASSIFIED']}건 → UNCLASSIFIED로 집계")
+        try:
+            write_dq_metrics(
+                OliveyoungIceberg.get_catalog(),
+                stage="bronze_to_silver",
+                batch_date=batch_date,
+                run_id=batch_job,
+                target_table=OliveyoungIceberg.SILVER_ERROR_TABLE,
+                # report_webhook 미전달 → 요약만 리포트, 유형별은 저장만
+                **err_counts,
+            )
+        except Exception as e:
+            logger.warning(f"error_type dq_metrics 적재 실패(무시): {e}")
+
     print("10. Iceberg write...")
     write_to_iceberg(silver_df, error_df)
 
