@@ -152,8 +152,8 @@ def run_pipeline():
         logger.warning(f"dq_metrics 적재 실패(무시): {e}")
 
     # 정합성 메트릭(2) — error_type별 레코드 수. 저장만(Discord 리포트 미발송, 비치명).
-    # REJECTED vs UNMAPPED_RESIDUAL 구분용. UNMAPPED_RESIDUAL은 Silver에도 적재된 상품이
-    # error에 남을 수 있어 '상품 수'가 아닌 '레코드 수'로 집계. run 식별은 위 silver_error가 마커.
+    # UNMAPPED_RESIDUAL은 매칭 유무와 무관히 잔여 성분이 있으면 남음(Silver 적재 여부 섞임) →
+    # '상품 수'가 아닌 '레코드 수'로 집계. run 식별은 위 silver_error가 마커.
     if not error_df.empty and "error_type" in error_df.columns:
         # 집계·기록 전체를 try 안에 두어 'DQ 계측은 비치명' 계약을 끝까지 지킴.
         # error_type null/누락은 value_counts가 기본 제외 → fillna로 UNCLASSIFIED에 담아
