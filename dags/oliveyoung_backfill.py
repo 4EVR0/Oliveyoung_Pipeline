@@ -46,6 +46,9 @@ with DAG(
             "LOG_FORMAT": "json",
             "LOG_LEVEL": "INFO",
             "DISCORD_DQ_WEBHOOK_URL": os.environ.get("DISCORD_DQ_WEBHOOK_URL", ""),
+            "BACKFILL_DQ_DASHBOARD_URL": os.environ.get(
+                "DQ_DASHBOARD_URL", "http://15.165.179.181:3000/d/oliveyoung-dq-table"
+            ),
             "BACKFILL_SOURCE_RUN_ID": "{{ dag_run.conf.get('source_run_id', '') }}",
             "BACKFILL_MODE": "{{ dag_run.conf.get('mode', 'dry-run') }}",
             "BACKFILL_CONFIRM_SOURCE_RUN_ID": "{{ dag_run.conf.get('confirm_source_run_id', '') }}",

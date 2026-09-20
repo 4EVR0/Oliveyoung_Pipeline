@@ -19,7 +19,7 @@ class BackfillControlsTest(unittest.TestCase):
         preview = {
             "source_run_id": "20260725", "batch_date": "2026-07-25",
             "batch_job": "backfill_20260725", "manifest_status": "completed",
-            "manifest_consistent": True, "bronze_rows": 1,
+            "manifest_integrity_ok": True, "bronze_rows": 1,
             "existing": {"history_other_jobs": [], "dq_other_runs": [], "dq_normal_runs": []},
         }
         with patch.object(backfill.OliveyoungIceberg, "get_catalog", return_value=MagicMock()), \
@@ -33,23 +33,38 @@ class BackfillControlsTest(unittest.TestCase):
             dq.assert_not_called()
             report.assert_not_called()
 
-    def test_incomplete_manifest_requires_explicit_override(self):
-        preview = {"manifest_status": "interrupted", "manifest_consistent": False,
+    def test_manifest_integrity_failure_requires_explicit_override(self):
+        preview = {"manifest_status": "interrupted", "manifest_integrity_ok": False,
                    "bronze_rows": 1,
                    "existing": {"history_other_jobs": [], "dq_other_runs": [], "dq_normal_runs": []}}
         with self.assertRaises(ValueError):
             backfill._assert_safe(preview, False)
         backfill._assert_safe(preview, True)
 
+    def test_interrupted_status_with_integrity_ok_does_not_require_override(self):
+        # This crawl is chronically interrupted — that alone is normal, not a
+        # reason to block. Only a genuine integrity mismatch requires override.
+        preview = {"manifest_status": "interrupted", "manifest_integrity_ok": True,
+                   "bronze_rows": 1,
+                   "existing": {"history_other_jobs": [], "dq_other_runs": [], "dq_normal_runs": []}}
+        backfill._assert_safe(preview, False)  # must not raise
+
+    def test_in_progress_manifest_is_hard_rejected_even_with_override(self):
+        preview = {"manifest_status": "in_progress", "manifest_integrity_ok": True,
+                   "bronze_rows": 1,
+                   "existing": {"history_other_jobs": [], "dq_other_runs": [], "dq_normal_runs": []}}
+        with self.assertRaises(ValueError):
+            backfill._assert_safe(preview, True)
+
     def test_same_day_other_batch_is_rejected_even_with_override(self):
-        preview = {"manifest_status": "completed", "manifest_consistent": True,
+        preview = {"manifest_status": "completed", "manifest_integrity_ok": True,
                    "bronze_rows": 1,
                    "existing": {"history_other_jobs": ["normal"], "dq_other_runs": [], "dq_normal_runs": []}}
         with self.assertRaises(ValueError):
             backfill._assert_safe(preview, True)
 
     def test_same_day_normal_dq_is_rejected_even_without_history_rows(self):
-        preview = {"manifest_status": "completed", "manifest_consistent": True,
+        preview = {"manifest_status": "completed", "manifest_integrity_ok": True,
                    "bronze_rows": 1,
                    "existing": {"history_other_jobs": [], "dq_other_runs": [],
                                 "dq_normal_runs": ["bronze_to_silver_20260725_010000"]}}

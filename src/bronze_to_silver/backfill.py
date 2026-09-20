@@ -96,12 +96,27 @@ def preflight(catalog, con, source_run_id: str) -> tuple[dict, pd.DataFrame]:
         [files],
     ).df()
     categories = sorted({"/".join(f.split("/run_id=")[0].split("/")[-2:]) for f in files})
-    manifest_parts = {part["key"] for part in manifest.get("parts", []) if "key" in part}
+    # manifest["parts"]: flat list of {key, part_num, category, subcategory,
+    # product_count, uploaded_at}. This crawl is chronically "interrupted" (no
+    # run in recent history reaches "completed"), so gating on status would
+    # block every backfill. We instead gate on *integrity*: no file exists in
+    # S3 that the manifest doesn't know about (rogue), and the parts that do
+    # exist account for exactly the rows we loaded. A category later deleted
+    # from S3 (e.g. 맨즈케어) only shrinks "missing_parts" (informational) and
+    # does not fail integrity, since the remaining parts' counts still match.
+    manifest_part_counts = {
+        part["key"]: part.get("product_count")
+        for part in manifest.get("parts", []) if "key" in part
+    }
+    manifest_parts = set(manifest_part_counts)
     discovered_parts = {f.removeprefix(f"s3://{S3.BUCKET}/") for f in files}
-    manifest_consistent = (
-        manifest_parts == discovered_parts
-        and manifest.get("total_products") == len(raw_df)
+    rogue_parts = discovered_parts - manifest_parts
+    missing_parts = manifest_parts - discovered_parts
+    present_product_count = sum(
+        count for key, count in manifest_part_counts.items()
+        if key in discovered_parts and count is not None
     )
+    manifest_integrity_ok = not rogue_parts and present_product_count == len(raw_df)
     existing = _existing(catalog, batch_date, batch_job)
     preview = {
         "source_run_id": source_run_id,
@@ -109,9 +124,12 @@ def preflight(catalog, con, source_run_id: str) -> tuple[dict, pd.DataFrame]:
         "batch_job": batch_job,
         "manifest_status": manifest.get("status", "unknown"),
         "manifest_total_products": manifest.get("total_products"),
-        "manifest_consistent": manifest_consistent,
-        "manifest_missing_parts": sorted(manifest_parts - discovered_parts),
-        "manifest_unlisted_parts": sorted(discovered_parts - manifest_parts),
+        "manifest_integrity_ok": manifest_integrity_ok,
+        # In manifest but no longer in S3 — informational only (e.g. a
+        # category retired after this run); does not block the backfill.
+        "manifest_missing_parts": sorted(missing_parts),
+        # In S3 but not in manifest — an actual integrity gap.
+        "manifest_rogue_parts": sorted(rogue_parts),
         "subcategories": categories,
         "part_count": len(files),
         "bronze_rows": len(raw_df),
@@ -124,8 +142,17 @@ def _assert_safe(preview: dict, allow_incomplete: bool) -> None:
     existing = preview["existing"]
     if existing["history_other_jobs"] or existing["dq_other_runs"] or existing["dq_normal_runs"]:
         raise ValueError("동일 batch_date에 다른 history/DQ run이 있습니다. 자동 적재를 거부합니다")
-    if (preview["manifest_status"] != "completed" or not preview["manifest_consistent"]) and not allow_incomplete:
-        raise ValueError("manifest가 미완료이거나 입력 파일/건수와 불일치합니다. 명시적 allow_incomplete=true가 필요합니다")
+    # in_progress = the crawl is still writing; data is a moving target. No
+    # override can make this safe, unlike "interrupted" (a finished-but-partial
+    # crawl, which is this project's normal state and not itself a reason to
+    # block — see manifest_integrity_ok below).
+    if preview["manifest_status"] == "in_progress":
+        raise ValueError("크롤이 아직 진행 중입니다(in_progress). 완료 후 다시 시도하세요 — override 불가")
+    if not preview["manifest_integrity_ok"] and not allow_incomplete:
+        raise ValueError(
+            "manifest 무결성 이상입니다(S3에 manifest가 모르는 파일이 있거나, 존재하는 part의 "
+            "product_count 합이 로드한 행수와 다릅니다). 명시적 allow_incomplete=true가 필요합니다"
+        )
     if preview["bronze_rows"] == 0:
         raise ValueError("Bronze JSON 0행은 백필하지 않습니다")
 
@@ -206,23 +233,78 @@ def _report(preview: dict, metrics: dict, allow_incomplete: bool) -> None:
     if not webhook:
         logger.warning("백필 완료 리포트 미발송: DISCORD_DQ_WEBHOOK_URL 미설정")
         return
-    body = (
-        "**과거 백필 완료 (history·DQ 전용)**\n"
-        f"source_run_id: `{preview['source_run_id']}` | batch_date: `{preview['batch_date']}`\n"
-        f"manifest: `{preview['manifest_status']}` | 부분 실행 승인: `{allow_incomplete}`\n"
-        f"Bronze: {metrics['bronze_loaded']} / Silver: {metrics['silver_ok']} / Error: {metrics['silver_error']}\n"
-        "현재 silver_current·gold·CDC·Neo4j에는 반영하지 않았습니다. "
-        "과거 입력을 현재 정제 규칙으로 처리한 결과입니다."
-    )
+    body = _format_backfill_report(preview, metrics, allow_incomplete)
     try:
         request = urllib.request.Request(
             webhook, data=json.dumps({"content": body}, ensure_ascii=False).encode("utf-8"),
-            headers={"Content-Type": "application/json"}, method="POST",
+            # The default urllib User-Agent may be rejected by Discord/Cloudflare.
+            headers={"Content-Type": "application/json", "User-Agent": "oliveyoung-backfill/1.0"},
+            method="POST",
         )
         with urllib.request.urlopen(request, timeout=5):
             pass
     except Exception as exc:
-        logger.warning("백필 데이터는 성공했지만 Discord 리포트 전송 실패: %s", exc)
+        # An HTTPError can contain the webhook URL (including its secret token).
+        logger.warning("백필 데이터 검증 성공, Discord 리포트만 전송 실패: %s", type(exc).__name__)
+
+
+def _format_backfill_report(preview: dict, metrics: dict, allow_incomplete: bool) -> str:
+    """Format an operator-facing success message; never imply graph/current parity."""
+    status = preview["manifest_status"]
+    integrity_ok = preview["manifest_integrity_ok"]
+    # This crawl is chronically interrupted, so "interrupted" alone is not an
+    # anomaly — it's informational (partial category coverage, still worth
+    # flagging). A failed integrity check is the real anomaly: it means an
+    # operator explicitly overrode a file/count mismatch to get here.
+    if not integrity_ok:
+        header = "⚠️ **과거 백필 완료 — manifest 무결성 이상 승인됨**"
+    elif status != "completed":
+        header = f"ℹ️ **과거 백필 완료 — 부분 크롤(manifest status: `{status}`)**"
+    else:
+        header = "✅ **과거 백필 완료**"
+    processed = metrics["silver_ok"] + metrics["silver_error"]
+    rate = metrics["silver_error"] / processed if processed else 0.0
+    lines = [
+        header,
+        f"배치 날짜: `{preview['batch_date']}` · 소스 run: `{preview['source_run_id']}`",
+        f"백필 키: `{preview['batch_job']}`",
+        f"입력: {metrics['bronze_loaded']:,}건 / {preview['part_count']:,} part / "
+        f"{len(preview['subcategories']):,}개 서브카테고리",
+        f"Silver history: {metrics['silver_ok']:,}건 · 전처리 오류: {metrics['silver_error']:,}건 "
+        f"({rate:.1%})",
+        f"manifest: `{status}` · 무결성: `{integrity_ok}` · "
+        f"무결성 override 사용: `{allow_incomplete and not integrity_ok}`",
+    ]
+    if preview.get("manifest_missing_parts"):
+        lines.append(
+            f"ℹ️ manifest엔 있으나 S3엔 없는 part {len(preview['manifest_missing_parts']):,}개"
+            "(의도적 삭제 가능 — 예: 폐지된 카테고리)"
+        )
+    error_types = sorted(
+        ((name.removeprefix("err_"), int(count)) for name, count in metrics.items()
+         if name.startswith("err_") and count),
+        key=lambda item: (-item[1], item[0]),
+    )
+    if error_types:
+        summary = ", ".join(f"{re.sub(r'[`\r\n]', '_', name)[:48]} {count:,}건"
+                            for name, count in error_types[:5])
+        lines.append(f"오류 유형 상위 {min(len(error_types), 5)}종: {summary}")
+    dashboard = os.environ.get("BACKFILL_DQ_DASHBOARD_URL", "").strip()
+    if dashboard.startswith(("https://", "http://")):
+        lines.append(f"[DQ 대시보드(정상 배치)]({dashboard})")
+    lines.append("백필 DQ 확인: `/dq/latest?stage=bronze_to_silver_backfill&metric=silver_ok`")
+    lines.append("⚠️ `silver_current`·gold·CDC·Neo4j 미반영. 과거 Bronze를 현재 정제 규칙으로 처리했습니다.")
+    return "\n".join(lines)
+
+
+def _commit_backfill(catalog, preview: dict, silver_df: pd.DataFrame,
+                     error_df: pd.DataFrame, allow_incomplete: bool) -> None:
+    """Only a fully verified write may emit the success report."""
+    _replace_history(catalog, silver_df, preview["batch_date"], preview["batch_job"])
+    metrics = _replace_dq(catalog, preview, error_df, len(silver_df))
+    _verify(catalog, preview, len(silver_df), metrics)
+    print(json.dumps({"result": "verified", "metrics": metrics}, ensure_ascii=False), flush=True)
+    _report(preview, metrics, allow_incomplete)
 
 
 def run(source_run_id: str, mode: str, confirm_source_run_id: str | None,
@@ -256,11 +338,7 @@ def run(source_run_id: str, mode: str, confirm_source_run_id: str | None,
             product_name_norm_list=dictionaries.product_name_norm_list,
             batch=batch, batch_date=preview["batch_date"],
         )
-        _replace_history(catalog, silver_df, preview["batch_date"], preview["batch_job"])
-        metrics = _replace_dq(catalog, preview, error_df, len(silver_df))
-        _verify(catalog, preview, len(silver_df), metrics)
-        print(json.dumps({"result": "verified", "metrics": metrics}, ensure_ascii=False), flush=True)
-        _report(preview, metrics, allow_incomplete)
+        _commit_backfill(catalog, preview, silver_df, error_df, allow_incomplete)
         return preview
     finally:
         con.close()
