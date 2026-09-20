@@ -1,9 +1,8 @@
 pandas
 pyahocorasick
-pyiceberg
+pyiceberg[pyiceberg-core]==0.12.0
 duckdb
 boto3
 pyarrow
 s3fs
 neo4j>=5.0.0
-pyiceberg[pyiceberg-core]

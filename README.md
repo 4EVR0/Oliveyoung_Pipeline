@@ -149,6 +149,10 @@ CSV 익스포트는 그래프를 처음 채울 때만 쓴다
 `INCOMPLETE_DATA` · `OPTION_BUNDLE` · `INVALID_METADATA` · `HETEROGENEOUS_BUNDLE`
 · `DUPLICATE_PRODUCT` · `UNMAPPED_RESIDUAL` · `HIDDEN_BUNDLE`.
 
+### 과거 배치 수동 백필
+
+Airflow UI의 `oliveyoung_backfill`에서 먼저 `dry-run`, 검토 후 별도 `apply`를 실행한다. 기존 정상 파이프라인과 CDC는 변경하지 않는다. 입력·충돌 검사, 실행 JSON 및 배포 전제는 [백필 운영 절차](docs/backfill.md)를 참고한다.
+
 ### 정합성 메트릭 (`dq_metrics`)
 
 파이프라인 각 단계가 남기는 데이터 정합성 수치를 모으는 **key/value(EAV) 테이블**.

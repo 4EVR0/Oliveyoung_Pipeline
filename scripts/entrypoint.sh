@@ -11,6 +11,9 @@ case "$1" in
   bronze_to_silver)
     python src/bronze_to_silver/main.py
     ;;
+  backfill)
+    python -m src.bronze_to_silver.backfill "${@:2}"
+    ;;
   silver_to_gold)
     python src/silver_to_gold/main.py
     ;;
@@ -24,7 +27,7 @@ case "$1" in
     python neo4j_incremental.py
     ;;
   *)
-    echo "Usage: $0 {create_reference_tables|sync_reference|bronze_to_silver|silver_to_gold|silver_to_neo4j_csv|create_gold_product_ingredients|neo4j_incremental}"
+    echo "Usage: $0 {create_reference_tables|sync_reference|bronze_to_silver|backfill|silver_to_gold|silver_to_neo4j_csv|create_gold_product_ingredients|neo4j_incremental}"
     exit 1
     ;;
 esac
