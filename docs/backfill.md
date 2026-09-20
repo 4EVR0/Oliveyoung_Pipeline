@@ -51,8 +51,11 @@ EC2 Airflow의 수동 `oliveyoung_backfill` DAG는 한 크롤 `source_run_id`의
 | 필드 | 확인할 것 |
 |---|---|
 | `batch_date` | crawl DQ에서 조회한 논리 날짜가 기대값인지 |
-| `manifest_status`, `manifest_consistent` | 기본 적용 조건은 `completed`와 `true` |
-| `manifest_missing_parts`, `manifest_unlisted_parts` | 비어 있는지. 값이 있으면 원인 조사 |
+| `manifest_status` | 참고용. 이 크롤은 만성적으로 `interrupted`이므로 이 값만으로 apply를 막지 않는다 |
+| `manifest_integrity_ok` | **게이트.** `false`면 `allow_incomplete`가 필요(S3에 manifest가 모르는 파일이 있거나, 존재하는 part의 product_count 합이 로드 행수와 다름) |
+| `manifest_missing_parts` | manifest엔 있으나 S3엔 없는 part. 정보용(카테고리가 나중에 삭제됐을 수 있음) — 값이 있어도 게이트 아님 |
+| `manifest_rogue_parts` | S3엔 있으나 manifest가 모르는 part. **비어 있어야 함** — 값이 있으면 `manifest_integrity_ok=false`가 되고 원인 조사 필요 |
+| `manifest_status == "in_progress"` | **하드 리젝**(override 불가). 크롤이 아직 쓰는 중이니 완료까지 대기 |
 | `subcategories`, `part_count`, `bronze_rows` | 예상 범위인지. JSON 읽기 오류는 태스크 실패 |
 | `existing.history_other_jobs`, `existing.dq_other_runs`, `existing.dq_normal_runs` | 모두 빈 배열이어야 함. 동일 날짜 정상/다른 백필과 충돌하면 apply 거부 |
 | `existing.history_same_key`, `existing.dq_same_key` | 동일 키 재실행인지 판단하는 기존 행 수 |
@@ -63,13 +66,13 @@ EC2 Airflow의 수동 `oliveyoung_backfill` DAG는 한 크롤 `source_run_id`의
 {"source_run_id":"실제_크롤_RUN_ID","mode":"apply","confirm_source_run_id":"실제_크롤_RUN_ID"}
 ```
 
-`confirm_source_run_id`는 정확히 일치해야 한다. manifest가 미완료/누락이거나 파일·행수와 불일치하지만 **부분 입력을 수용하기로 명시적으로 결정**했다면 `"allow_incomplete":true`를 추가할 수 있다. 날짜 충돌은 우회하지 못한다. 가능하면 dry-run 직후 apply해 입력 변동 가능성을 줄인다.
+`confirm_source_run_id`는 정확히 일치해야 한다. `manifest_status`가 `interrupted`인 것만으로는 apply가 막히지 않는다(이 크롤의 정상 상태). `manifest_integrity_ok`가 `false`(manifest 누락, S3에 manifest가 모르는 파일, 또는 파일·행수 불일치)일 때만, **그 불일치를 확인하고 수용하기로 명시적으로 결정**했다면 `"allow_incomplete":true`를 추가할 수 있다. `manifest_status == "in_progress"`는 override로도 우회하지 못한다(크롤 완료 대기). 날짜 충돌도 우회하지 못한다. 가능하면 dry-run 직후 apply해 입력 변동 가능성을 줄인다.
 
 ## 4. 성공 판정과 후속 확인
 
 1. Airflow 태스크가 `success`이고 로그에 `"result": "verified"`와 `metrics`가 있는지 확인한다. 쓰기 순서는 **history → DQ → 두 테이블 재조회 검증**이다. `bronze_loaded`, `silver_ok`, `silver_error`, `err_*`와 유형별 합계를 검토한다.
 2. DQ API를 이용할 수 있으면 `GET /dq/latest?stage=bronze_to_silver_backfill&metric=silver_ok` 응답의 `run_id=backfill_<source_run_id>`와 `batch_date`를 확인한다. dq_api 캐시 TTL은 약 60초라 직후 반영이 늦을 수 있다. 정상 DQ 패널은 `stage=bronze_to_silver`와 구별된다.
-3. Discord의 **`과거 백필 완료`** 메시지는 검증 뒤 한 번 시도된다. 웹훅 미설정/전송 실패는 경고만 남긴다. 메시지만으로 성공·실패를 판단하지 않는다.
+3. Discord의 **`과거 백필 완료`** 메시지는 검증 뒤 한 번 시도된다. `interrupted` 등 부분 크롤이면 제목에 **부분 크롤 승인**을 명시한다. 메시지는 소스 run·논리 날짜·manifest 상태·입력/정상/에러 수·상위 오류 유형·현재 테이블/그래프 미반영 범위를 보여준다. DQ 대시보드 링크는 **정상 배치 참고용**이고, 백필 DQ는 `stage=bronze_to_silver_backfill`로 별도 조회한다. 웹훅 미설정/전송 실패는 경고만 남긴다. 메시지만으로 성공·실패를 판단하지 않는다.
 4. `silver_current`·gold·CDC·Neo4j는 백필로 변경되지 않았음을 확인한다. 다음 정상 실행 뒤 `silver_current`와 Neo4j 상품 ID 차이를 다시 비교하고 신규 불일치는 **별도 이슈**로 기록한다.
 5. 보류했던 정상 트리거/운영 상태를 원복한다. 여러 과거 run이면 각 run마다 dry-run→apply→검증을 반복하고 다음 run 전에 충돌과 경합을 다시 확인한다.
 
