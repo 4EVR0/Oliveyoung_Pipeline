@@ -6,6 +6,7 @@ Iceberg Pipeline 전역 설정 파일 (EC2 전용)
 """
 
 import os
+import re
 import duckdb
 from pyiceberg.catalog import load_catalog
 
@@ -198,6 +199,25 @@ class DuckDB:
 
         files = df["file"].tolist()
         print(f"   최신 run_id 파일 {len(files)}개 선택됨")
+        return files
+
+    @staticmethod
+    def get_bronze_files_for_run(con: duckdb.DuckDBPyConnection, source_run_id: str) -> list[str]:
+        """백필용: 한 크롤 run_id의 모든 sub-category part를 선택한다."""
+        if not re.fullmatch(r"[A-Za-z0-9_-]{1,100}", source_run_id):
+            raise ValueError("source_run_id에 허용되지 않는 문자가 있습니다")
+
+        rows = con.execute(
+            """
+            SELECT file FROM glob(?)
+            WHERE regexp_extract(file, 'run_id=([^/]+)/', 1) = ?
+            ORDER BY file
+            """,
+            [S3.BRONZE_GLOB, source_run_id],
+        ).fetchall()
+        files = [row[0] for row in rows]
+        if not files:
+            raise ValueError(f"Bronze 파일이 없는 source_run_id: {source_run_id}")
         return files
 
 
