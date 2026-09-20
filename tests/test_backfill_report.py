@@ -36,12 +36,13 @@ class BackfillReportTest(unittest.TestCase):
             self.assertEqual(request.get_method(), "POST")
             self.assertEqual(request.get_header("User-agent"), "oliveyoung-backfill/1.0")
             self.assertIn("ℹ️", payload)
-            self.assertNotIn("⚠️ **[백필]", payload)
+            self.assertIn("[올리브영 전처리 백필]", payload)
+            self.assertNotIn("⚠️ **[올리브영 전처리 백필]", payload)
             self.assertIn("부분 크롤", payload)
             self.assertIn("interrupted", payload)
             self.assertIn("20260731", payload)
             self.assertIn("4,142건", payload)
-            self.assertIn("정상 적재", payload)
+            self.assertIn("✅ 정상", payload)
             self.assertIn("2,400건", payload)
             self.assertIn("40.0%", payload)
             self.assertIn("silver_current", payload)
@@ -57,7 +58,7 @@ class BackfillReportTest(unittest.TestCase):
             backfill._report(preview, METRICS, True)
             payload = json.loads(post.call_args.args[0].data.decode("utf-8"))["content"]
             self.assertIn("⚠️", payload)
-            self.assertIn("무결성 이상 승인", payload)
+            self.assertIn("무결성 이상", payload)
             self.assertIn("`True`", payload)  # 무결성 override 사용
 
     def test_missing_parts_are_surfaced_as_informational(self):

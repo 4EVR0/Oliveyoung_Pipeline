@@ -261,24 +261,26 @@ def _format_backfill_report(preview: dict, metrics: dict, allow_incomplete: bool
     # anomaly — it's informational (partial category coverage, still worth
     # flagging). A failed integrity check is the real anomaly: it means an
     # operator explicitly overrode a file/count mismatch to get here.
-    if not integrity_ok:
-        icon, scope = "⚠️", "manifest 무결성 이상 승인됨"
-    elif status != "completed":
-        icon, scope = "ℹ️", f"부분 크롤: {status}"
-    else:
-        icon, scope = "✅", "완료"
+    icon = "⚠️" if not integrity_ok else ("ℹ️" if status != "completed" else "✅")
     processed = metrics["silver_ok"] + metrics["silver_error"]
     rate = metrics["silver_error"] / processed if processed else 0.0
 
+    # 필드 라벨(bronze 로드/정상/에러/오류율)은 정상 파이프라인 완료 리포트
+    # (oliveyoung_common/dq_metrics.py:_send_report)와 동일한 용어를 그대로 써서,
+    # 제목의 '백필' 구분자 없이도 같은 계열의 알림임을 알 수 있게 한다.
     lines = [
-        f"{icon} **[백필] {preview['batch_date']} 배치 완료** ({scope})",
+        f"{icon} **[올리브영 전처리 백필] 정제 완료**",
         "━" * 20,
-        f"📦 입력 상품   {metrics['bronze_loaded']:,}건",
+        f"📅 배치   {preview['batch_date']}",
+        f"📥 bronze 로드   {metrics['bronze_loaded']:,}건",
+        f"✅ 정상   {metrics['silver_ok']:,}건",
+        f"⚠️ 에러   {metrics['silver_error']:,}건",
+        f"📊 오류율   {rate:.1%}",
         f"📂 서브카테고리   {len(preview['subcategories']):,}개 ({preview['part_count']:,} part)",
-        f"✅ 정상 적재   {metrics['silver_ok']:,}건",
-        f"⚠️ 전처리 오류   {metrics['silver_error']:,}건 ({rate:.1%})",
         f"🧬 소스 run   `{preview['source_run_id']}` → 백필 키 `{preview['batch_job']}`",
     ]
+    if status != "completed":
+        lines.append(f"ℹ️ manifest 상태   {status} (이 크롤의 정상 상태 — 부분 크롤)")
     error_types = sorted(
         ((name.removeprefix("err_"), int(count)) for name, count in metrics.items()
          if name.startswith("err_") and count),
