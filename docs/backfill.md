@@ -38,7 +38,9 @@ EC2 Airflow의 수동 `oliveyoung_backfill` DAG는 한 크롤 `source_run_id`의
 
 ## 3. Airflow UI: dry-run → 검토 → 별도 apply
 
-`oliveyoung_backfill` → **Trigger DAG w/ config**에서 먼저 실행한다. 새 DAG가 paused라면 UI에서 활성화한다. dry-run은 Iceberg·S3 데이터 쓰기와 Discord 전송을 하지 않는다.
+`oliveyoung_backfill`의 DAG 화면에서 새 DAG가 paused라면 먼저 활성화하고, 오른쪽 위 **재생(▶) / Trigger DAG**를 누른다. **입력 폼이 열려야 한다.** `source_run_id` 텍스트 칸에 실제 크롤 run ID를 넣고, `mode`에서 `dry-run`을 선택한다. `confirm_source_run_id`는 dry-run에서는 비워 두고 `allow_incomplete`는 끈다. 화면 아래쪽의 생성된 JSON을 펼치면 대략 다음 내용이어야 한다. JSON 편집기가 보이면 같은 내용을 직접 입력해도 된다. 마지막으로 폼 안의 **Trigger**를 눌러 생성한다. dry-run은 Iceberg·S3 데이터 쓰기와 Discord 전송을 하지 않는다.
+
+**입력 폼 없이 즉시 DAG run이 생성된다면 더 진행하지 않는다.** 배포된 DAG가 이 가이드 이전 버전일 수 있다. 이번 DAG는 Airflow `Param`으로 입력 폼을 강제한다. 이미 만들어진 빈 conf run은 `source_run_id` 검사에서 실패하며 백필 데이터를 쓰지 않는다. [Airflow 2.9.2의 Trigger UI Form 문서](https://airflow.apache.org/docs/apache-airflow/2.9.2/core-concepts/params.html#use-params-to-provide-a-trigger-ui-form)도 참고한다.
 
 ```json
 {"source_run_id":"실제_크롤_RUN_ID","mode":"dry-run"}
@@ -55,7 +57,7 @@ EC2 Airflow의 수동 `oliveyoung_backfill` DAG는 한 크롤 `source_run_id`의
 | `existing.history_other_jobs`, `existing.dq_other_runs`, `existing.dq_normal_runs` | 모두 빈 배열이어야 함. 동일 날짜 정상/다른 백필과 충돌하면 apply 거부 |
 | `existing.history_same_key`, `existing.dq_same_key` | 동일 키 재실행인지 판단하는 기존 행 수 |
 
-프리뷰가 실패하거나 충돌하면 **apply하지 않는다.** 다른 배치의 행 삭제나 `batch_date` 변경으로 우회하지 않는다. §2 게이트를 **적용 직전 다시** 확인한 뒤 **새 DAG run**으로 실행한다.
+프리뷰가 실패하거나 충돌하면 **apply하지 않는다.** 다른 배치의 행 삭제나 `batch_date` 변경으로 우회하지 않는다. §2 게이트를 **적용 직전 다시** 확인한 뒤 다시 ▶ **Trigger DAG**를 눌러 **새 DAG run**을 만든다. 폼에서 같은 `source_run_id`, `mode=apply`, 동일한 `confirm_source_run_id`를 입력하고 생성된 JSON을 확인한 뒤 제출한다.
 
 ```json
 {"source_run_id":"실제_크롤_RUN_ID","mode":"apply","confirm_source_run_id":"실제_크롤_RUN_ID"}

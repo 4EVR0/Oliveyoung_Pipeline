@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 
 from airflow import DAG
+from airflow.models.param import Param
 from airflow.providers.docker.operators.docker import DockerOperator
 
 ECR_REGISTRY = os.environ.get("ECR_REGISTRY", "")
@@ -16,6 +17,18 @@ with DAG(
     catchup=False,
     max_active_runs=1,
     tags=["oliveyoung", "manual", "backfill"],
+    # Airflow 2.9.2 skips the trigger form for DAGs without params by default.
+    # Keep source_run_id required so a plain Trigger cannot create a useless run.
+    params={
+        "source_run_id": Param("", type="string", minLength=1,
+                               description="크롤 S3/checkpoint의 실제 run_id"),
+        "mode": Param("dry-run", type="string", enum=["dry-run", "apply"],
+                      description="먼저 dry-run을 실행하고 검토 후 apply"),
+        "confirm_source_run_id": Param("", type="string",
+                                       description="apply일 때 source_run_id와 같은 값"),
+        "allow_incomplete": Param(False, type="boolean",
+                                  description="미완료/불일치 manifest의 부분 백필을 명시적으로 승인"),
+    },
 ) as dag:
     backfill = DockerOperator(
         task_id="backfill_history_and_dq",
