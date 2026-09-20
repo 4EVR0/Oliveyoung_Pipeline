@@ -249,7 +249,12 @@ def _report(preview: dict, metrics: dict, allow_incomplete: bool) -> None:
 
 
 def _format_backfill_report(preview: dict, metrics: dict, allow_incomplete: bool) -> str:
-    """Format an operator-facing success message; never imply graph/current parity."""
+    """Format an operator-facing success message; never imply graph/current parity.
+
+    Mirrors the crawl/pipeline report's visual style (icon + bracketed scope
+    title, ━ divider, one emoji-labeled row per fact) so backfill reports read
+    as the same family of notification, not a separate ad-hoc format.
+    """
     status = preview["manifest_status"]
     integrity_ok = preview["manifest_integrity_ok"]
     # This crawl is chronically interrupted, so "interrupted" alone is not an
@@ -257,43 +262,46 @@ def _format_backfill_report(preview: dict, metrics: dict, allow_incomplete: bool
     # flagging). A failed integrity check is the real anomaly: it means an
     # operator explicitly overrode a file/count mismatch to get here.
     if not integrity_ok:
-        header = "⚠️ **과거 백필 완료 — manifest 무결성 이상 승인됨**"
+        icon, scope = "⚠️", "manifest 무결성 이상 승인됨"
     elif status != "completed":
-        header = f"ℹ️ **과거 백필 완료 — 부분 크롤(manifest status: `{status}`)**"
+        icon, scope = "ℹ️", f"부분 크롤: {status}"
     else:
-        header = "✅ **과거 백필 완료**"
+        icon, scope = "✅", "완료"
     processed = metrics["silver_ok"] + metrics["silver_error"]
     rate = metrics["silver_error"] / processed if processed else 0.0
+
     lines = [
-        header,
-        f"배치 날짜: `{preview['batch_date']}` · 소스 run: `{preview['source_run_id']}`",
-        f"백필 키: `{preview['batch_job']}`",
-        f"입력: {metrics['bronze_loaded']:,}건 / {preview['part_count']:,} part / "
-        f"{len(preview['subcategories']):,}개 서브카테고리",
-        f"Silver history: {metrics['silver_ok']:,}건 · 전처리 오류: {metrics['silver_error']:,}건 "
-        f"({rate:.1%})",
-        f"manifest: `{status}` · 무결성: `{integrity_ok}` · "
-        f"무결성 override 사용: `{allow_incomplete and not integrity_ok}`",
+        f"{icon} **[백필] {preview['batch_date']} 배치 완료** ({scope})",
+        "━" * 20,
+        f"📦 입력 상품   {metrics['bronze_loaded']:,}건",
+        f"📂 서브카테고리   {len(preview['subcategories']):,}개 ({preview['part_count']:,} part)",
+        f"✅ 정상 적재   {metrics['silver_ok']:,}건",
+        f"⚠️ 전처리 오류   {metrics['silver_error']:,}건 ({rate:.1%})",
+        f"🧬 소스 run   `{preview['source_run_id']}` → 백필 키 `{preview['batch_job']}`",
     ]
-    if preview.get("manifest_missing_parts"):
-        lines.append(
-            f"ℹ️ manifest엔 있으나 S3엔 없는 part {len(preview['manifest_missing_parts']):,}개"
-            "(의도적 삭제 가능 — 예: 폐지된 카테고리)"
-        )
     error_types = sorted(
         ((name.removeprefix("err_"), int(count)) for name, count in metrics.items()
          if name.startswith("err_") and count),
         key=lambda item: (-item[1], item[0]),
     )
     if error_types:
-        summary = ", ".join(f"{re.sub(r'[`\r\n]', '_', name)[:48]} {count:,}건"
-                            for name, count in error_types[:5])
-        lines.append(f"오류 유형 상위 {min(len(error_types), 5)}종: {summary}")
+        top = ", ".join(f"{re.sub(r'[`\r\n]', '_', name)[:48]} {count:,}건"
+                         for name, count in error_types[:5])
+        lines.append(f"🔎 오류 유형 Top{min(len(error_types), 5)}   {top}")
+    if preview.get("manifest_missing_parts"):
+        lines.append(
+            f"ℹ️ manifest엔 있으나 S3엔 없는 part {len(preview['manifest_missing_parts']):,}개"
+            "(의도적 삭제 가능 — 예: 폐지된 카테고리)"
+        )
+    if integrity_ok:
+        lines.append("🔍 manifest 무결성 정상")
+    else:
+        lines.append(f"🔍 manifest 무결성 이상 — override 사용: `{allow_incomplete}`")
     dashboard = os.environ.get("BACKFILL_DQ_DASHBOARD_URL", "").strip()
     if dashboard.startswith(("https://", "http://")):
-        lines.append(f"[DQ 대시보드(정상 배치)]({dashboard})")
-    lines.append("백필 DQ 확인: `/dq/latest?stage=bronze_to_silver_backfill&metric=silver_ok`")
-    lines.append("⚠️ `silver_current`·gold·CDC·Neo4j 미반영. 과거 Bronze를 현재 정제 규칙으로 처리했습니다.")
+        lines.append(f"🔗 [DQ 대시보드(정상 배치)]({dashboard})")
+    lines.append("📊 백필 DQ   `/dq/latest?stage=bronze_to_silver_backfill&metric=silver_ok`")
+    lines.append("🚫 `silver_current`·gold·CDC·Neo4j 미반영. 과거 Bronze를 현재 정제 규칙으로 처리했습니다.")
     return "\n".join(lines)
 
 
