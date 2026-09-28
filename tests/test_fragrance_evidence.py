@@ -3,12 +3,14 @@ import hashlib
 import io
 import json
 import unittest
+from unittest.mock import Mock
 
 import pandas as pd
 
 from gold_pipeline.fragrance_evidence import label_evidence
 from gold_pipeline.write_neo4j_csv import PRODUCT_COLUMNS, attach_fragrance_evidence
 from oliveyoung_common.neo4j_csv import build_node_csv
+from neo4j_incremental import apply_new, apply_changed
 
 
 class LabelEvidenceTest(unittest.TestCase):
@@ -36,11 +38,17 @@ class LabelEvidenceTest(unittest.TestCase):
         output = attach_fragrance_evidence(df, {"p1": claim})
         header, data = build_node_csv(output, PRODUCT_COLUMNS)
         rows = list(csv.reader(io.StringIO(header + data)))
-        evidence = json.loads(rows[1][4])
+        evidence = json.loads(rows[1][rows[0].index("fragrance_evidence")])
         self.assertEqual(hashlib.sha256(raw.encode()).hexdigest(), evidence["label_sha256"])
         self.assertEqual(claim, evidence["manufacturer_claim"])
         self.assertEqual("not_listed", evidence["status"])
         self.assertNotIn("fragrance_evidence", df.columns)
+
+    def test_incremental_updates_invalidate_old_reviewed_claim(self):
+        for write in (apply_new, apply_changed):
+            tx = Mock()
+            write(tx, {"product_id": "p1"}, {})
+            self.assertIn("p.fragrance_evidence = null", tx.run.call_args_list[0].args[0])
 
 
 if __name__ == "__main__":

@@ -125,13 +125,16 @@ def _merge_contains(tx, product_id: str, ingredients: list, mapping: dict[str, s
 
 
 def apply_new(tx, product: dict, mapping: dict[str, str]) -> None:
+    # CDC rows do not carry a reviewed raw-label snapshot. Never retain a previous
+    # fragrance claim through re-creation/updates; full export can re-verify it.
     tx.run(
         """
         MERGE (p:Product {product_id: $product_id})
         SET p.product_name = $product_name,
             p.brand        = $brand,
             p.category     = $category,
-            p.goods_no     = $goods_no
+            p.goods_no     = $goods_no,
+            p.fragrance_evidence = null
         """,
         product_id=product["product_id"],
         product_name=product.get("product_name"),
@@ -156,7 +159,8 @@ def apply_changed(tx, product: dict, mapping: dict[str, str]) -> None:
         SET p.product_name = $product_name,
             p.brand        = $brand,
             p.category     = $category,
-            p.goods_no     = $goods_no
+            p.goods_no     = $goods_no,
+            p.fragrance_evidence = null
         """,
         product_id=product["product_id"],
         product_name=product.get("product_name"),
