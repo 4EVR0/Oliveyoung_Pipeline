@@ -14,6 +14,9 @@ oliveyoung_common.neo4j_csv 가 담당한다.
 from __future__ import annotations
 
 import logging
+import json
+import os
+from pathlib import Path
 
 import duckdb
 import pandas as pd
@@ -28,6 +31,7 @@ from oliveyoung_common.neo4j_csv import (
 from oliveyoung_common.s3_paths import neo4j_csv_prefix
 
 from config.settings import S3, OliveyoungIceberg
+from gold_pipeline.fragrance_evidence import label_evidence
 
 
 logger = logging.getLogger(__name__)
@@ -45,7 +49,23 @@ PRODUCT_COLUMNS: list[CsvColumn] = [
     CsvColumn(name="brand", source="product_brand"),
     CsvColumn(name="category"),
     CsvColumn(name="goods_no"),  # 올리브영 상품번호(raw 통과)
+    CsvColumn(name="fragrance_evidence"),
 ]
+
+
+def attach_fragrance_evidence(df: pd.DataFrame, claims: dict | None = None) -> pd.DataFrame:
+    """Carry raw-label provenance and optional human-reviewed manufacturer claims."""
+    df = df.copy()
+    values = []
+    for _, row in df.iterrows():
+        evidence = label_evidence(row["product_id"], row.get("product_ingredients_raw"),
+                                  row.get("product_url"), row.get("crawled_at"))
+        claim = (claims or {}).get(str(row["product_id"]))
+        if claim:
+            evidence["manufacturer_claim"] = claim
+        values.append(json.dumps(evidence, ensure_ascii=False))
+    df["fragrance_evidence"] = values
+    return df
 
 
 def write_product_node_csv() -> None:
@@ -58,7 +78,8 @@ def write_product_node_csv() -> None:
         table = catalog.load_table(OliveyoungIceberg.SILVER_CURRENT_TABLE)
         df: pd.DataFrame = (
             table.scan(
-                selected_fields=("product_id", "product_name", "product_brand", "category", "goods_no"),
+                selected_fields=("product_id", "product_name", "product_brand", "category", "goods_no",
+                                 "product_ingredients_raw", "product_url", "crawled_at"),
             ).to_pandas()
         )
 
@@ -68,6 +89,11 @@ def write_product_node_csv() -> None:
             logger.warning("silver_current에 Product 데이터 없음 — 업로드 skip")
             return
 
+        claims_path = os.environ.get("FRAGRANCE_CLAIMS_PATH")
+        claims = json.loads(Path(claims_path).read_text(encoding="utf-8")) if claims_path else {}
+        if not isinstance(claims, dict):
+            raise ValueError("FRAGRANCE_CLAIMS_PATH must contain a product_id → reviewed claim object")
+        df = attach_fragrance_evidence(df, claims)
         header_csv, data_csv = build_node_csv(df, PRODUCT_COLUMNS)
 
         prefix = neo4j_csv_prefix(
