@@ -5,25 +5,55 @@ Olive Young 크롤링 데이터를 **Medallion Architecture (Bronze → Silver �
 
 ---
 
-## 아키텍처
+## 데이터 파이프라인 아키텍처
 
+이 파이프라인은 크롤러가 S3에 적재한 Bronze JSON을 입력으로 받아, 정제·표준화된 Silver Iceberg 테이블과 분석·그래프 연동용 Gold 산출물을 생성합니다.
+저장 계층은 S3, 메타스토어는 AWS Glue Catalog, 테이블 포맷은 Apache Iceberg를 사용합니다.
+
+```text
+Oliveyoung Crawling
+    |
+    v
+Bronze Layer (S3 JSON)
+    |  최신 run_id 탐색 / DuckDB 로드
+    v
+Reference + INCI Layer
+    |  typo map / garbage keywords / custom ingredients
+    |  inci_db.silver_kcia_cosing_graphrag_current
+    v
+Bronze to Silver
+    |  정제 / 성분 표준화 / 오류 분리 / batch metadata 부여
+    v
+Silver Layer (Iceberg — oliveyoung_db)
+    |-- oliveyoung_silver_current   최신 제품 상태 (overwrite)
+    |-- oliveyoung_silver_history   시계열 감사 로그 (append)
+    |-- oliveyoung_silver_error     처리 실패 DLQ (overwrite)
+    |
+    v
+Silver to Gold
+    |  INCI 메타데이터 조인 / 성분 빈도 집계 / 변경 이력 생성
+    v
+Gold Layer (Iceberg — oliveyoung_db)
+    |-- gold_product_ingredients    unique 성분 x INCI 메타데이터 (overwrite)
+    |-- gold_ingredient_frequency   카테고리별 성분 빈도 (append)
+    |-- gold_product_change_log     CDC 변경 이력 (append)
+    |
+    v
+Neo4j Export (S3 CSV)
+    |-- nodes/Product/{run_id}/
+    |-- rels/CONTAINS/{run_id}/
 ```
-Bronze (S3 JSON)
-    ↓  DuckDB로 최신 run_id 파일 로드
-Silver (Iceberg — oliveyoung_db)
- ├── oliveyoung_silver_current    ← 최신 제품 데이터 (overwrite)
- ├── oliveyoung_silver_history    ← 시계열 감사 로그 (append)
- └── oliveyoung_silver_error      ← 처리 실패 레코드 DLQ (overwrite)
-    ↓  INCI 표준 데이터와 조인
-Gold (Iceberg — oliveyoung_db)
- ├── gold_product_ingredients     ← unique 성분 × INCI 메타데이터 (overwrite)
- ├── gold_ingredient_frequency    ← 카테고리별 Top 50 성분 (append)
- └── gold_product_change_log      ← CDC 변경 이력 (append)
-    ↓  neo4j-admin import 포맷 CSV
-Neo4j CSV (S3 gold/neo4j/oliveyoung/)
- ├── nodes/Product/{run_id}/      ← 제품 노드
- └── rels/CONTAINS/{run_id}/      ← Product → Ingredient 관계
-```
+
+### 레이어별 책임
+
+| 레이어 | 저장 위치 | 책임 |
+|--------|-----------|------|
+| Bronze | S3 JSON | 크롤러 원본 결과 보존, run_id 단위 입력 제공 |
+| Reference | Git JSON + Iceberg | 오타 보정, 불량 키워드, 커스텀 성분 사전 관리 |
+| INCI | `inci_db` Iceberg | KCIA/COSING 기반 표준 성분 메타데이터 제공 |
+| Silver | `oliveyoung_db` Iceberg | 제품 단위 정제 결과, 오류 DLQ, 감사 로그 저장 |
+| Gold | `oliveyoung_db` Iceberg | 성분 분석, INCI 확장 정보, 변경 이력 저장 |
+| Neo4j CSV | S3 CSV | 그래프 DB 초기 적재용 노드·관계 파일 생성 |
 
 ### 처리 흐름
 
@@ -34,7 +64,7 @@ Neo4j CSV (S3 gold/neo4j/oliveyoung/)
 5. **Split** — 정상 레코드 → Silver current/history, 오류 레코드 → Silver error
 6. **Join** — Silver unique 성분 × `inci_db.gold_kcia_cosing_ingredients_current` LEFT JOIN → `gold_product_ingredients`
 7. **Aggregate** — 카테고리별 성분 빈도 집계 → `gold_ingredient_frequency`
-8. **Export** — Iceberg(Parquet) + S3 CSV 동시 저장
+8. **Export** — Iceberg(Parquet) + S3 CSV 저장
 9. **Neo4j CSV** — Silver × Gold 조인으로 Product 노드·CONTAINS 관계 CSV → S3 (`gold/neo4j/`)
 
 ---
@@ -93,19 +123,26 @@ Iceberg_pipeline/
 
 ---
 
-## 주요 의존성
+## 주요 라이브러리 버전
 
-| 패키지 | 용도 |
-|--------|------|
-| `pandas` | 데이터 조작 |
-| `pyahocorasick` | 고속 다중 문자열 매칭 |
-| `pyiceberg` | Apache Iceberg 카탈로그 클라이언트 |
-| `duckdb` | S3 데이터 SQL 쿼리 및 in-process 조인 |
-| `boto3` | AWS S3 작업 |
-| `pyarrow` | Iceberg 쓰기용 Arrow 직렬화 |
-| `s3fs` | pandas S3 직접 읽기 |
+Docker 이미지는 `python:3.12-slim`을 기준으로 빌드하며, 런타임 의존성은 `requirements.txt`에서 관리합니다.
+현재 대부분의 패키지는 버전을 고정하지 않고 빌드 시점의 호환 가능한 최신 버전을 설치하며, `neo4j`만 `5.0.0` 이상으로 제한합니다.
 
-분석·로컬 개발 시에는 `requirements-dev.txt`를 사용합니다 (`ipykernel` 포함).
+| 패키지 | 버전 정책 | 용도 |
+|--------|-----------|------|
+| Python | `3.12` | 파이프라인 런타임 |
+| `pandas` | unpinned | DataFrame 정제, 집계, 샘플링 |
+| `pyahocorasick` | unpinned | KCIA 성분명 고속 다중 문자열 매칭 |
+| `pyiceberg` | unpinned | Glue Catalog 연결, Iceberg 테이블 생성·조회·쓰기 |
+| `duckdb` | unpinned | S3 JSON 로드, in-process SQL 조인, Neo4j CSV 생성 쿼리 |
+| `boto3` | unpinned | S3 객체 조회·업로드, AWS SDK 연동 |
+| `pyarrow` | unpinned | Iceberg 스키마 기준 Arrow Table 변환 |
+| `s3fs` | unpinned | pandas/DuckDB 주변 S3 파일 접근 보조 |
+| `neo4j` | `>=5.0.0` | Neo4j 연동 호환성 확보 |
+| `ipykernel` | dev only, unpinned | 로컬 분석·노트북 커널 |
+| `streamlit` | dev only, unpinned | 운영 UI 로컬 실행 |
+
+분석·로컬 개발 시에는 `requirements-dev.txt`를 사용합니다. 재현 가능한 배포가 필요하면 운영 배포 시점의 lock file 또는 이미지 digest를 별도로 고정하는 것을 권장합니다.
 
 ---
 
@@ -298,6 +335,37 @@ CONTAINS 관계는 `product_ingredients`(한국어 성분명)를 UNNEST해 `gold
 | inci_db 웨어하우스 | `s3://oliveyoung-crawl-data/inci_iceberg_metadata/` |
 | 리전 | `ap-northeast-2` (서울) |
 | 런타임 | Python 3.12, EC2 (IAM Role 기반 인증) |
+
+---
+
+## 주요 기능 설계
+
+### 1. 최신 Bronze run 자동 선택
+크롤링 결과는 서브카테고리와 run_id 단위로 S3에 누적됩니다. 파이프라인은 DuckDB/S3 glob 기반으로 최신 run_id 파일을 탐색해 입력을 구성하고, 동일 배치 안에서 처리된 레코드에 공통 batch metadata를 부여합니다.
+
+### 2. Reference Data 기반 정제 정책
+오타 사전, 제품명 정규화 규칙, 불량 키워드, 커스텀 성분 사전을 코드와 분리해 관리합니다. JSON으로 관리되는 룰은 `sync_reference_data.py`를 통해 Iceberg Reference 테이블에 반영되며, 파이프라인은 실행 시점의 Reference 테이블을 읽어 정제 정책으로 사용합니다.
+
+### 3. 성분 표준화와 잔여 문자열 검증
+성분 문자열은 노이즈 제거와 쉼표 마스킹을 거친 뒤 Aho-Corasick 오토마타로 KCIA 표준명에 매칭됩니다. 매칭되지 않은 잔여 문자열은 오류 후보로 분리해 `UNMAPPED_RESIDUAL` 등 DLQ 유형으로 추적할 수 있게 설계했습니다.
+
+### 4. 제품 식별자 안정화
+제품 ID는 브랜드명과 정제된 제품명을 기반으로 UUID v5를 생성합니다. 동일 제품이 재수집되어도 안정적인 product_id를 유지해 current/history 비교, CDC, Neo4j 관계 생성의 기준 키로 사용할 수 있습니다.
+
+### 5. Current / History / Error 분리 저장
+Silver는 최신 상태를 위한 `current`, 감사와 재처리를 위한 `history`, 품질 점검을 위한 `error`로 나뉩니다. `current`와 `error`는 overwrite로 현재 상태를 명확히 유지하고, `history`는 append로 배치별 이력을 누적합니다.
+
+### 6. Gold 분석 테이블 생성
+Silver의 unique 성분을 INCI Gold 테이블과 조인해 `gold_product_ingredients`를 만들고, 카테고리별 성분 빈도와 제품 변경 이력을 별도 Gold 테이블로 저장합니다. 분석·추천·검색·그래프 적재가 Silver 원본을 반복 스캔하지 않도록 목적별 산출물을 분리합니다.
+
+### 7. CDC 기반 변경 추적
+Iceberg snapshot과 Silver current 데이터를 활용해 제품 변경 로그를 생성합니다. 신규, 변경, 삭제 관점의 변경 이력을 Gold에 append하여 downstream 시스템이 전체 재처리 없이 변경분을 추적할 수 있게 합니다.
+
+### 8. Neo4j import 파일 생성
+Silver 제품 데이터와 Gold 성분 매핑을 조인해 `neo4j-admin import` 형식의 Product 노드와 CONTAINS 관계 CSV를 생성합니다. 헤더와 데이터 파일을 S3 run_id 경로로 분리해 그래프 DB 초기 적재와 재적재를 지원합니다.
+
+### 9. Airflow / Docker 실행 단위 분리
+Reference 동기화, Bronze→Silver, Silver→Gold, Silver→Neo4j CSV를 컨테이너 실행 모드로 분리했습니다. Airflow DAG는 주요 ETL 단계를 순차 실행하고, Neo4j CSV Export는 초기 적재 또는 필요 시 수동 실행할 수 있도록 독립 DAG로 관리합니다.
 
 ---
 
