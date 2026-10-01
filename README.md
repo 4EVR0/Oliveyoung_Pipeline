@@ -150,9 +150,13 @@ CSV 익스포트는 그래프를 처음 채울 때만 쓴다
 
 ### Silver Error (DLQ)
 
-처리 실패 레코드를 사유와 함께 적재해 사후 재처리·분석에 쓴다
-`INCOMPLETE_DATA` · `OPTION_BUNDLE` · `INVALID_METADATA` · `HETEROGENEOUS_BUNDLE`
-· `DUPLICATE_PRODUCT` · `UNMAPPED_RESIDUAL` · `HIDDEN_BUNDLE`.
+처리 실패 레코드를 `error_type`과 함께 적재해 사후 분석에 쓴다(overwrite, 다시 읽어 재처리하는 코드는 없음)
+`INCOMPLETE_DATA_REJECTED` · `OPTION_BUNDLE_REJECTED` · `INVALID_METADATA_REJECTED`
+· `HETEROGENEOUS_BUNDLE_REJECTED` · `DUPLICATE_PRODUCT_REJECTED` · `HIDDEN_BUNDLE_REJECTED`
+· `UNMAPPED_RESIDUAL`.
+
+`_REJECTED`는 상품 제외, `UNMAPPED_RESIDUAL`은 매핑 안 된 잔여 성분 경고라 정상 적재와 겹칠 수 있다.
+DQ에는 유형별 건수가 `err_<error_type>`로 기록되고, 유형이 비면 `UNCLASSIFIED`로 센다.
 
 ### 과거 배치 수동 백필
 
