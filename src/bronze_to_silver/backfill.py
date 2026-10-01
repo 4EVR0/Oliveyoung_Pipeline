@@ -21,6 +21,7 @@ from pyiceberg.expressions import And, EqualTo
 from config.settings import DuckDB, OliveyoungIceberg, S3
 from models.batch_metadata import BatchMetadata
 from oliveyoung_common import s3_paths
+from src.bronze_gate.decide import category_presence
 from silver_pipeline.write_silver import _build_arrow_table_for_silver
 
 logger = logging.getLogger(__name__)
@@ -84,6 +85,25 @@ def _existing(catalog, batch_date: str, batch_job: str) -> dict:
     }
 
 
+def _known_category_paths(con) -> set[str]:
+    """bronze에 한 번이라도 데이터가 있었던 카테고리 경로(main/sub). 구버전 manifest의 누락 기준."""
+    rows = con.execute(
+        "SELECT DISTINCT regexp_extract(file, '/([^/]+/[^/]+)/run_id=', 1) FROM glob(?)",
+        [S3.BRONZE_GLOB],
+    ).fetchall()
+    return {row[0] for row in rows if row[0]}
+
+
+def _category_gaps(con, manifest: dict, present_paths: list[str]) -> tuple[list[str], list[str] | None]:
+    """(누락 카테고리, 부분 수집 카테고리). 대상 목록이 있는 manifest만 부분 수집을 판별한다."""
+    if manifest.get("target_subcategories"):
+        presence = category_presence(manifest, manifest["target_subcategories"])
+        return (sorted(k for k, s in presence.items() if s == "missing"),
+                sorted(k for k, s in presence.items() if s == "partial"))
+    # 구버전: 완료 표시가 오염돼 부분 수집은 판별 불가. 누락은 경로 기준(part 0개)으로 정확하다.
+    return sorted(_known_category_paths(con) - set(present_paths)), None
+
+
 def preflight(catalog, con, source_run_id: str) -> tuple[dict, pd.DataFrame]:
     batch_job = _key(source_run_id)
     batch_date = _batch_date(catalog, source_run_id)
@@ -117,6 +137,7 @@ def preflight(catalog, con, source_run_id: str) -> tuple[dict, pd.DataFrame]:
         if key in discovered_parts and count is not None
     )
     manifest_integrity_ok = not rogue_parts and present_product_count == len(raw_df)
+    missing_subcategories, partial_subcategories = _category_gaps(con, manifest, categories)
     existing = _existing(catalog, batch_date, batch_job)
     preview = {
         "source_run_id": source_run_id,
@@ -131,6 +152,10 @@ def preflight(catalog, con, source_run_id: str) -> tuple[dict, pd.DataFrame]:
         # In S3 but not in manifest — an actual integrity gap.
         "manifest_rogue_parts": sorted(rogue_parts),
         "subcategories": categories,
+        # 정상 전처리와 달리 백필은 이 run만 읽어, 누락 카테고리는 그 날짜 history에 아예 없다.
+        # 막지 않고 보이게 한다(부분 수집은 완료 표시가 정확한 manifest에서만, 아니면 None).
+        "missing_subcategories": missing_subcategories,
+        "partial_subcategories": partial_subcategories,
         "part_count": len(files),
         "bronze_rows": len(raw_df),
         "existing": existing,
@@ -179,6 +204,8 @@ def _replace_dq(catalog, preview: dict, error_df: pd.DataFrame, silver_count: in
         "silver_error": error_count,
         "error_rate": round(error_count / processed, 4) if processed else 0.0,
     }
+    if preview.get("missing_subcategories") is not None:
+        metrics["categories_missing"] = len(preview["missing_subcategories"])
     if error_count:
         if "error_type" not in error_df:
             raise ValueError("error_df에 error_type이 없습니다")
@@ -290,6 +317,14 @@ def _format_backfill_report(preview: dict, metrics: dict, allow_incomplete: bool
         top = ", ".join(f"{re.sub(r'[`\r\n]', '_', name)[:48]} {count:,}건"
                          for name, count in error_types[:5])
         lines.append(f"🔎 오류 유형 Top{min(len(error_types), 5)}   {top}")
+    missing = preview.get("missing_subcategories") or []
+    if missing:
+        names = ", ".join(re.sub(r"[`\r\n]", "_", name)[:40] for name in missing[:10])
+        more = f" 외 {len(missing) - 10}개" if len(missing) > 10 else ""
+        lines.append(f"📭 누락 카테고리 {len(missing):,}개   {names}{more} (이 날짜 history에 없음)")
+    partial = preview.get("partial_subcategories") or []
+    if partial:
+        lines.append(f"🧩 부분 수집 {len(partial):,}개   " + ", ".join(p[:40] for p in partial[:10]))
     if preview.get("manifest_missing_parts"):
         lines.append(
             f"ℹ️ manifest엔 있으나 S3엔 없는 part {len(preview['manifest_missing_parts']):,}개"
