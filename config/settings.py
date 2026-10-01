@@ -24,6 +24,8 @@ class S3:
     # Bronze: s3://.../oliveyoung/main_category/sub_category/run_id=YYYYMMDD_HHMMSS/part_*.json
     BRONZE_PREFIX = s3_paths.BRONZE_PREFIX
     BRONZE_GLOB   = s3_paths.BRONZE_GLOB
+    BRONZE_OPTIMIZED_PREFIX = s3_paths.BRONZE_OPTIMIZED_PREFIX
+    BRONZE_OPTIMIZED_PATH   = f"s3://{s3_paths.BUCKET}/{s3_paths.BRONZE_OPTIMIZED_PREFIX}"
 
     # KCIA: INCI_data_silver/kcia_cosing/batch=YYYY-MM/kcia_cosing_matched_final.csv
     KCIA_PREFIX = s3_paths.KCIA_PREFIX

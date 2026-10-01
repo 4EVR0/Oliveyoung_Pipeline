@@ -5,8 +5,10 @@ Silver / Silver Error 테이블 Iceberg write + CSV 저장 모듈
 - schema evolution 이후에는 반드시 테이블을 reload 한다.
 """
 
+from concurrent.futures import ThreadPoolExecutor
 import io
-from typing import Any, TYPE_CHECKING
+import os
+from typing import Any, Callable, TYPE_CHECKING
 
 import boto3
 import pandas as pd
@@ -106,42 +108,69 @@ def _add_missing_columns_as_none(df: pd.DataFrame, target_columns: list[str]) ->
 # Schema Evolution
 # ==========================================
 
-def _evolve_schema(table) -> None:
+def _evolve_schema(table) -> bool:
     """
-    테이블에 batch_job, batch_date 컬럼이 없으면 추가합니다.
-    이미 존재하면 아무것도 하지 않습니다.
+    테이블에 batch_job, batch_date 컬럼이 없을 때만 추가합니다.
+
+    Returns:
+        bool: schema evolution commit이 발생했으면 True
     """
     existing = {f.name for f in table.schema().fields}
+    missing_batch_job = "batch_job" not in existing
+    missing_batch_date = "batch_date" not in existing
+
+    if not missing_batch_job and not missing_batch_date:
+        return False
 
     with table.update_schema() as update:
-        if "batch_job" not in existing:
+        if missing_batch_job:
             update.add_column("batch_job", StringType())
-        if "batch_date" not in existing:
+        if missing_batch_date:
             update.add_column("batch_date", TimestamptzType())
 
-    # 참고:
     # update_schema() commit 이후에는 호출 측에서 table을 reload 해서
     # 최신 schema/table metadata를 다시 잡는 것이 안전하다.
+    return True
 
 
-def _load_and_evolve_table(catalog, identifier: str):
+def _load_and_evolve_table(
+    catalog,
+    identifier: str,
+    profiler: "PipelineProfiler" = None,
+    stage_name: str | None = None,
+):
     """
-    테이블 로드 → 필요한 schema evolution 수행 → 최신 테이블 reload 반환
+    테이블 로드 → 필요한 경우에만 schema evolution → 최신 테이블 반환
     """
-    table = catalog.load_table(identifier)
-    before = {f.name for f in table.schema().fields}
 
-    _evolve_schema(table)
+    def prepare_table():
+        table = catalog.load_table(identifier)
+        before = {f.name for f in table.schema().fields}
 
-    # evolution 여부와 상관없이 reload 해서 최신 metadata 사용
-    table = catalog.load_table(identifier)
-    after = {f.name for f in table.schema().fields}
+        schema_evolved = _evolve_schema(table)
+        if schema_evolved:
+            table = catalog.load_table(identifier)
 
-    if before != after:
-        print(f"   schema evolve 완료: {identifier}")
-        print(f"   before: {sorted(before)}")
-        print(f"   after : {sorted(after)}")
+        after = {f.name for f in table.schema().fields}
 
+        if before != after:
+            print(f"   schema evolve 완료: {identifier}")
+            print(f"   before: {sorted(before)}")
+            print(f"   after : {sorted(after)}")
+
+        return table, schema_evolved, len(after)
+
+    if profiler and stage_name:
+        with profiler.step(stage_name) as step:
+            table, schema_evolved, field_count = prepare_table()
+            step.set_metadata(
+                table=identifier,
+                schema_evolved=schema_evolved,
+                field_count=field_count,
+            )
+            return table
+
+    table, _, _ = prepare_table()
     return table
 
 
@@ -241,6 +270,109 @@ def _build_arrow_table_for_error(df: pd.DataFrame, table) -> pa.Table:
 # Iceberg write
 # ==========================================
 
+def _parallel_iceberg_writes_enabled() -> bool:
+    return os.environ.get("ICEBERG_PARALLEL_WRITES", "1").strip().lower() not in {
+        "0",
+        "false",
+        "no",
+        "off",
+    }
+
+
+def _write_current_table(
+    silver_df: pd.DataFrame,
+    profiler: "PipelineProfiler" = None,
+) -> str:
+    catalog = OliveyoungIceberg.get_catalog()
+    current_table = _load_and_evolve_table(
+        catalog,
+        OliveyoungIceberg.SILVER_CURRENT_TABLE,
+        profiler=profiler,
+        stage_name="iceberg_current_load_table",
+    )
+    if profiler:
+        with profiler.step("pandas_to_arrow_current", rows_in=len(silver_df)) as step:
+            current_arrow = _build_arrow_table_for_silver(silver_df, current_table)
+            step.set_rows_out(current_arrow.num_rows)
+        with profiler.step("iceberg_current_write", rows_in=current_arrow.num_rows) as step:
+            current_table.overwrite(current_arrow)
+            step.set_rows_out(current_arrow.num_rows)
+            step.set_metadata(table=OliveyoungIceberg.SILVER_CURRENT_TABLE, mode="overwrite")
+    else:
+        current_arrow = _build_arrow_table_for_silver(silver_df, current_table)
+        current_table.overwrite(current_arrow)
+
+    return f"   Iceberg overwrite 완료: {OliveyoungIceberg.SILVER_CURRENT_TABLE} ({len(silver_df)}건)"
+
+
+def _write_history_table(
+    silver_df: pd.DataFrame,
+    profiler: "PipelineProfiler" = None,
+) -> str:
+    catalog = OliveyoungIceberg.get_catalog()
+    history_table = _load_and_evolve_table(
+        catalog,
+        OliveyoungIceberg.SILVER_HISTORY_TABLE,
+        profiler=profiler,
+        stage_name="iceberg_history_load_table",
+    )
+    if profiler:
+        with profiler.step("pandas_to_arrow_history", rows_in=len(silver_df)) as step:
+            history_arrow = _build_arrow_table_for_silver(silver_df, history_table)
+            step.set_rows_out(history_arrow.num_rows)
+        with profiler.step("iceberg_history_write", rows_in=history_arrow.num_rows) as step:
+            history_table.append(history_arrow)
+            step.set_rows_out(history_arrow.num_rows)
+            step.set_metadata(table=OliveyoungIceberg.SILVER_HISTORY_TABLE, mode="append")
+    else:
+        history_arrow = _build_arrow_table_for_silver(silver_df, history_table)
+        history_table.append(history_arrow)
+
+    return f"   Iceberg append 완료:    {OliveyoungIceberg.SILVER_HISTORY_TABLE} ({len(silver_df)}건)"
+
+
+def _write_error_table(
+    error_df: pd.DataFrame,
+    profiler: "PipelineProfiler" = None,
+) -> str:
+    catalog = OliveyoungIceberg.get_catalog()
+    error_table = _load_and_evolve_table(
+        catalog,
+        OliveyoungIceberg.SILVER_ERROR_TABLE,
+        profiler=profiler,
+        stage_name="iceberg_error_load_table",
+    )
+    if profiler:
+        with profiler.step("pandas_to_arrow_error", rows_in=len(error_df)) as step:
+            error_arrow = _build_arrow_table_for_error(error_df, error_table)
+            step.set_rows_out(error_arrow.num_rows)
+        with profiler.step("iceberg_error_write", rows_in=error_arrow.num_rows) as step:
+            error_table.overwrite(error_arrow)
+            step.set_rows_out(error_arrow.num_rows)
+            step.set_metadata(table=OliveyoungIceberg.SILVER_ERROR_TABLE, mode="overwrite")
+    else:
+        error_arrow = _build_arrow_table_for_error(error_df, error_table)
+        error_table.overwrite(error_arrow)
+
+    return f"   Iceberg overwrite 완료: {OliveyoungIceberg.SILVER_ERROR_TABLE} ({len(error_df)}건)"
+
+
+def _run_iceberg_write_tasks(tasks: list[tuple[str, Callable[[], str]]], parallel: bool) -> None:
+    if not tasks:
+        return
+
+    if not parallel or len(tasks) == 1:
+        for _, task in tasks:
+            print(task())
+        return
+
+    max_workers = min(3, len(tasks))
+    with ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix="iceberg-write") as executor:
+        futures = [(name, executor.submit(task)) for name, task in tasks]
+        for _, future in futures:
+            print(future.result())
+
+
 def write_to_iceberg(
     silver_df: pd.DataFrame,
     error_df: pd.DataFrame,
@@ -256,54 +388,24 @@ def write_to_iceberg(
     error:
         - error/raw (overwrite): 최신 에러 결과 유지
     """
-    catalog = OliveyoungIceberg.get_catalog()
+    tasks: list[tuple[str, Callable[[], str]]] = []
 
     if not silver_df.empty:
-        # current - overwrite
-        current_table = _load_and_evolve_table(catalog, OliveyoungIceberg.SILVER_CURRENT_TABLE)
-        if profiler:
-            with profiler.step("pandas_to_arrow_current", rows_in=len(silver_df)) as step:
-                current_arrow = _build_arrow_table_for_silver(silver_df, current_table)
-                step.set_rows_out(current_arrow.num_rows)
-            with profiler.step("iceberg_current_write", rows_in=current_arrow.num_rows) as step:
-                current_table.overwrite(current_arrow)
-                step.set_rows_out(current_arrow.num_rows)
-        else:
-            current_arrow = _build_arrow_table_for_silver(silver_df, current_table)
-            current_table.overwrite(current_arrow)
-        print(f"   Iceberg overwrite 완료: {OliveyoungIceberg.SILVER_CURRENT_TABLE} ({len(silver_df)}건)")
-
-        # history - append
-        history_table = _load_and_evolve_table(catalog, OliveyoungIceberg.SILVER_HISTORY_TABLE)
-        if profiler:
-            with profiler.step("pandas_to_arrow_history", rows_in=len(silver_df)) as step:
-                history_arrow = _build_arrow_table_for_silver(silver_df, history_table)
-                step.set_rows_out(history_arrow.num_rows)
-            with profiler.step("iceberg_history_write", rows_in=history_arrow.num_rows) as step:
-                history_table.append(history_arrow)
-                step.set_rows_out(history_arrow.num_rows)
-        else:
-            history_arrow = _build_arrow_table_for_silver(silver_df, history_table)
-            history_table.append(history_arrow)
-        print(f"   Iceberg append 완료:    {OliveyoungIceberg.SILVER_HISTORY_TABLE} ({len(silver_df)}건)")
+        tasks.append(("current", lambda: _write_current_table(silver_df, profiler=profiler)))
+        tasks.append(("history", lambda: _write_history_table(silver_df, profiler=profiler)))
     else:
         print("   silver 데이터 없음 — Iceberg write 건너뜀")
 
     if not error_df.empty:
-        error_table = _load_and_evolve_table(catalog, OliveyoungIceberg.SILVER_ERROR_TABLE)
-        if profiler:
-            with profiler.step("pandas_to_arrow_error", rows_in=len(error_df)) as step:
-                error_arrow = _build_arrow_table_for_error(error_df, error_table)
-                step.set_rows_out(error_arrow.num_rows)
-            with profiler.step("iceberg_error_write", rows_in=error_arrow.num_rows) as step:
-                error_table.overwrite(error_arrow)
-                step.set_rows_out(error_arrow.num_rows)
-        else:
-            error_arrow = _build_arrow_table_for_error(error_df, error_table)
-            error_table.overwrite(error_arrow)
-        print(f"   Iceberg overwrite 완료: {OliveyoungIceberg.SILVER_ERROR_TABLE} ({len(error_df)}건)")
+        tasks.append(("error", lambda: _write_error_table(error_df, profiler=profiler)))
     else:
         print("   error 데이터 없음 — Iceberg write 건너뜀")
+
+    parallel = _parallel_iceberg_writes_enabled()
+    if parallel and len(tasks) > 1:
+        print(f"   Iceberg 병렬 write 시작: {len(tasks)}개 테이블")
+
+    _run_iceberg_write_tasks(tasks, parallel=parallel)
 
 
 # ==========================================
