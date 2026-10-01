@@ -42,6 +42,7 @@ oliveyoung_common/          공용 S3 경로 상수 (git submodule)
 data/                       오타·불량키워드·커스텀 성분 사전 (JSON)
 src/
   bronze_to_silver/         정제 + KCIA 매칭 (cleaner, ac_builder)
+                            과거 Bronze run의 history 전용 백필
   silver_to_gold/           CDC + Gold 집계
   silver_to_neo4j_csv/      Neo4j 초기 적재용 CSV 익스포트
 reference_pipeline/         사전 JSON → Iceberg 동기화
@@ -90,6 +91,7 @@ docker run --network host oliveyoung-pipeline neo4j_incremental
 |------|------|
 | `sync_reference` | 사전 JSON → Iceberg 동기화 |
 | `bronze_to_silver` | Bronze 로드 → 정제 → Silver |
+| `backfill` | 지정한 과거 Bronze run → Silver history + 백필 DQ (기본 dry-run) |
 | `silver_to_gold` | CDC + Gold 집계/mart |
 | `neo4j_incremental` | change_log → Neo4j 증분 반영 |
 | `silver_to_neo4j_csv` | Neo4j 초기 적재용 CSV → S3 |
@@ -97,11 +99,14 @@ docker run --network host oliveyoung-pipeline neo4j_incremental
 
 ## Airflow
 
-DockerOperator 기반 DAG 두 개로 운영한다
+DockerOperator 기반 DAG 세 개로 운영한다
 
 ```
 oliveyoung_pipeline             (schedule=None — 크롤링 DAG 가 트리거)
   sync_reference → bronze_to_silver → silver_to_gold → neo4j_incremental
+
+oliveyoung_backfill             (수동 — 과거 Bronze run의 history 전용 재처리)
+  backfill_history_and_dq
 
 oliveyoung_silver_to_neo4j_csv  (수동 — 그래프 초기 벌크 적재용)
   silver_to_neo4j_csv
@@ -145,13 +150,29 @@ CSV 익스포트는 그래프를 처음 채울 때만 쓴다
 
 ### Silver Error (DLQ)
 
-처리 실패 레코드를 사유와 함께 적재해 사후 재처리·분석에 쓴다
-`INCOMPLETE_DATA` · `OPTION_BUNDLE` · `INVALID_METADATA` · `HETEROGENEOUS_BUNDLE`
-· `DUPLICATE_PRODUCT` · `UNMAPPED_RESIDUAL` · `HIDDEN_BUNDLE`.
+처리 실패 레코드를 `error_type`과 함께 적재해 사후 분석에 쓴다(overwrite, 다시 읽어 재처리하는 코드는 없음)
+`INCOMPLETE_DATA_REJECTED` · `OPTION_BUNDLE_REJECTED` · `INVALID_METADATA_REJECTED`
+· `HETEROGENEOUS_BUNDLE_REJECTED` · `DUPLICATE_PRODUCT_REJECTED` · `HIDDEN_BUNDLE_REJECTED`
+· `UNMAPPED_RESIDUAL`.
+
+`_REJECTED`는 상품 제외, `UNMAPPED_RESIDUAL`은 매핑 안 된 잔여 성분 경고라 정상 적재와 겹칠 수 있다.
+DQ에는 유형별 건수가 `err_<error_type>`로 기록되고, 유형이 비면 `UNCLASSIFIED`로 센다.
 
 ### 과거 배치 수동 백필
 
-Airflow UI의 `oliveyoung_backfill`에서 먼저 `dry-run`, 검토 후 별도 `apply`를 실행한다. 기존 정상 파이프라인과 CDC는 변경하지 않는다. 입력·충돌 검사, 실행 JSON 및 배포 전제는 [백필 운영 절차](docs/backfill.md)를 참고한다.
+`oliveyoung_backfill`은 한 크롤 `source_run_id`의 Bronze JSON을 **현재 사전·정제 규칙**으로
+다시 처리한다. 쓰기 범위는 `oliveyoung_silver_history`와
+`dq_metrics(stage=bronze_to_silver_backfill)`뿐이며, `silver_current`·`silver_error`·Gold·CDC·Neo4j는
+변경하지 않는다. 과거 시점 규칙을 재현하거나 그래프를 자동 보정하는 작업은 아니다.
+
+Airflow UI에서 `source_run_id`를 넣고 `dry-run`을 먼저 실행해 manifest 무결성, 입력 건수,
+동일 날짜의 정상/다른 백필 충돌을 검토한다. 적용은 별도의 새 DAG run에서 `mode=apply`와
+동일한 `confirm_source_run_id`를 제출해야 한다. `in_progress` manifest와 날짜 충돌은 강제로
+우회할 수 없고, 무결성 불일치는 검토 후 `allow_incomplete=true`로만 명시적으로 승인한다.
+같은 키 재실행은 history와 백필 DQ의 해당 범위를 조건부 교체한 뒤 재조회 검증하며,
+검증 성공 후 Discord 완료 리포트를 보낸다.
+
+배포 전제, dry-run 확인 필드, 실패·재시도 절차는 [백필 운영 절차](docs/backfill.md)를 따른다.
 
 ### 정합성 메트릭 (`dq_metrics`)
 
@@ -161,6 +182,7 @@ Airflow UI의 `oliveyoung_backfill`에서 먼저 `dry-run`, 검토 후 별도 `a
 
 - 스키마·writer는 `oliveyoung_common/dq_metrics.py`가 소유(순수함수 `write_dq_metrics`), 생성은 `create_gold_tables.py dq_metrics`.
 - 각 단계가 `log_dq`(Loki 로그) + `write_dq_metrics`(테이블)로 **같은 수치를 이중 기록**(테이블 적재는 비치명적).
+- bronze→silver는 `silver_error`와 함께 `err_<error_type>` 건수를 기록한다. 백필은 별도 stage인 `bronze_to_silver_backfill`을 사용해 정상 실행과 섞이지 않는다.
 - `batch_date`(단계 관통 논리 배치 날짜)로 crawl·bronze_to_silver·silver_to_gold를 한 배치로 묶어, 대시보드 그래프의 한 시점을 클릭하면 그 배치의 silver 행으로 드릴다운한다. `run_id`는 초단위 유니크 실행 식별.
 - 테이블 실제 위치는 `GOLD_PATH`(`olive_young_gold/dq_metrics/`). 조회는 **dq_api**(pyiceberg+DuckDB)가 읽어 Grafana(Infinity)에 노출.
 - 단계가 끝나면 그 배치의 `dq_metrics` 요약을 **Discord 완료 리포트**로 보낸다(옵트인 — `DISCORD_DQ_WEBHOOK_URL` 있을 때만, 미설정이면 미전송). 만성적이지만 비치명적인 지표는 알람 대신 이 리포트로 노출.
