@@ -2,6 +2,21 @@
 
 EC2 Airflow의 수동 `oliveyoung_backfill` DAG는 한 크롤 `source_run_id`의 Bronze JSON 전체를 **현재 사전·정제 규칙**으로 재처리한다. 쓰기 대상은 `silver_history`와 DQ `stage=bronze_to_silver_backfill`뿐이다. `silver_current`·`silver_error`·gold·CDC·Neo4j는 쓰지 않는다. **그래프 자동 정합이나 과거 시점 규칙의 재현은 보장하지 않는다.**
 
+## 구현 경과 (2026-09-19~21)
+
+아래는 로컬 Git 커밋에 기록된 변경이다. 커밋이 있다는 사실과 운영 환경에 배포·실행됐다는 사실은 구분한다.
+
+| 시점 | 커밋·PR | 기록된 변경 |
+|---|---|---|
+| 9/19 | `bcfe511`, `78781eb`, `92fa86c` (PR #31) | 정상 bronze→silver의 오류 유형별 `err_*` 건수를 DQ에 기록하고, 계측 실패가 본 처리에 영향을 주지 않도록 정리했다. `UNMAPPED_RESIDUAL`은 Silver 적재 여부가 섞일 수 있는 잔여 성분으로 설명을 바로잡았다. |
+| 9/21 | `2b24eea`, `6549c30` (PR #32) | 수동 history 전용 백필, dry-run·별도 apply, 같은 키의 history/DQ 조건부 교체, 재조회 검증, 운영 가이드를 추가했다. |
+| 9/21 | `177579e` (Airflow_Infra) | Airflow DAG 디렉터리에 Pipeline의 `oliveyoung_backfill.py`를 가리키는 심볼릭 링크를 추가했다. 실제 EC2 반영 여부는 §1의 명령으로 확인한다. |
+| 9/21 | `0a0fdf3` / `c86c0e8` (PR #33) | Airflow `Param`으로 트리거 입력 폼을 요구하고, 빈 `source_run_id`로 실행되는 경우를 막았다. |
+| 9/21 | `299ac92` (PR #34) | 만성 `interrupted`를 무조건 실패로 취급하던 판단을 파일·행수 무결성 검사로 바꿨다. `in_progress`와 충돌은 계속 거부하고, 불일치 승인은 `allow_incomplete`로 명시하게 했다. |
+| 9/21 | `1a8da7a` (PR #35), `50b40b6` (PR #36) | 검증 뒤 발송하는 완료 리포트를 이모지 라벨 형식으로 정리하고, 제목을 `[올리브영 전처리 백필] 정제 완료`로, 필드 라벨을 정상 리포트와 같게 바꿨다. |
+
+백필 결과가 모니터링에 나타나는 경로는 `bronze_to_silver_backfill` stage의 DQ → `monitoring/dq_api`의 `/dq/error-types` → 정상 실행과 분리된 Grafana 백필 패널이다. 패널은 선택 기간 안에서 `created_at`이 가장 늦은 백필 실행 **한 건**의 유형별 오류 레코드 수를 표시한다. 여러 백필 실행을 합산하지 않는다. 대시보드 변경 이력은 Monitoring_Infra의 `config/dashboards/README.md`를 참고한다.
+
 ## 1. 배포 순서
 
 1. [Oliveyoung_Pipeline PR #32](https://github.com/4EVR0/Oliveyoung_Pipeline/pull/32)를 리뷰·머지한다. GitHub Actions의 **Build and Push to ECR**와 **Deploy to EC2** 결과를 확인한다. 전자는 `:latest` 이미지를 빌드하고, 후자는 SSM으로 `/home/airflow/pipelines/Oliveyoung_Pipeline`의 `git pull`을 요청한다.
@@ -72,7 +87,7 @@ EC2 Airflow의 수동 `oliveyoung_backfill` DAG는 한 크롤 `source_run_id`의
 
 1. Airflow 태스크가 `success`이고 로그에 `"result": "verified"`와 `metrics`가 있는지 확인한다. 쓰기 순서는 **history → DQ → 두 테이블 재조회 검증**이다. `bronze_loaded`, `silver_ok`, `silver_error`, `err_*`와 유형별 합계를 검토한다.
 2. DQ API를 이용할 수 있으면 `GET /dq/latest?stage=bronze_to_silver_backfill&metric=silver_ok` 응답의 `run_id=backfill_<source_run_id>`와 `batch_date`를 확인한다. dq_api 캐시 TTL은 약 60초라 직후 반영이 늦을 수 있다. 정상 DQ 패널은 `stage=bronze_to_silver`와 구별된다.
-3. Discord의 **`과거 백필 완료`** 메시지는 검증 뒤 한 번 시도된다. `interrupted` 등 부분 크롤이면 제목에 **부분 크롤 승인**을 명시한다. 메시지는 소스 run·논리 날짜·manifest 상태·입력/정상/에러 수·상위 오류 유형·현재 테이블/그래프 미반영 범위를 보여준다. DQ 대시보드 링크는 **정상 배치 참고용**이고, 백필 DQ는 `stage=bronze_to_silver_backfill`로 별도 조회한다. 웹훅 미설정/전송 실패는 경고만 남긴다. 메시지만으로 성공·실패를 판단하지 않는다.
+3. Discord의 **`[올리브영 전처리 백필] 정제 완료`** 메시지는 검증 뒤 한 번 시도된다. `interrupted` 등 미완료 manifest는 본문에 정보로 표시한다. 무결성 불일치를 `allow_incomplete`로 승인했으면 본문에 override 사용을 표시한다. 메시지는 소스 run·논리 날짜·manifest 상태·입력/정상/에러 수·상위 오류 유형·현재 테이블/그래프 미반영 범위를 보여준다. DQ 대시보드 링크는 **정상 배치 참고용**이고, 백필 DQ는 `stage=bronze_to_silver_backfill`로 별도 조회한다. 웹훅 미설정/전송 실패는 경고만 남긴다. 메시지만으로 성공·실패를 판단하지 않는다.
 4. `silver_current`·gold·CDC·Neo4j는 백필로 변경되지 않았음을 확인한다. 다음 정상 실행 뒤 `silver_current`와 Neo4j 상품 ID 차이를 다시 비교하고 신규 불일치는 **별도 이슈**로 기록한다.
 5. 보류했던 정상 트리거/운영 상태를 원복한다. 여러 과거 run이면 각 run마다 dry-run→apply→검증을 반복하고 다음 run 전에 충돌과 경합을 다시 확인한다.
 
