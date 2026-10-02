@@ -22,6 +22,8 @@ COMMON = dict(
         "BATCH_DATE": "{{ dag_run.conf.get('batch_date', '') }}",
         # bronze/silver 완료 리포트용 웹훅(없으면 미전송)
         "DISCORD_DQ_WEBHOOK_URL": os.environ.get("DISCORD_DQ_WEBHOOK_URL", ""),
+        # 입력 품질 게이트 우회(운영자 판단 시 conf {"gate": "skip"}, 판정·기록은 그대로)
+        "GATE_MODE": "{{ dag_run.conf.get('gate', '') }}",
     },
 )
 
@@ -30,6 +32,7 @@ with DAG(
     schedule=None,  # 크롤링 DAG의 TriggerDagRunOperator로 실행
     start_date=datetime(2026, 1, 1),
     catchup=False,
+    max_active_runs=1,  # 정상 전처리 동시 실행 방지(같은 입력 중복 append)
     tags=["oliveyoung", "etl"],
 ) as dag:
 
@@ -44,6 +47,7 @@ with DAG(
         task_id="bronze_to_silver",
         image=IMAGE,
         command="bronze_to_silver",
+        skip_on_exit_code=99,  # 입력 품질 게이트 보류 → skipped, 이후 태스크도 skipped
         **COMMON,
     )
 
