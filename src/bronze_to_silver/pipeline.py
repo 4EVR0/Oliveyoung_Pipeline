@@ -124,7 +124,10 @@ def load_bronze_data_from_files(
     else:
         metadata["materialized"] = False
     metadata["optimized_path"] = target_path
-    raw_df = con.execute(f"SELECT * FROM read_parquet({_sql_literal(target_path)})").df()
+    # The cache directory's file_set is an identifier, not a Bronze data column.
+    raw_df = con.execute(
+        f"SELECT * FROM read_parquet({_sql_literal(target_path)}, hive_partitioning=false)"
+    ).df()
     return raw_df, metadata
 
 
