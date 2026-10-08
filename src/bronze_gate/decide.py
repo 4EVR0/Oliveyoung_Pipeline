@@ -12,7 +12,10 @@ from dataclasses import dataclass, field
 PASS, WARN, BLOCK, OVERRIDDEN = 0, 1, 2, 3
 
 STALE_RUNS = 3          # 이 횟수 이상 연속 누락이면 경고(약 9일 이상 노후)
-MISSING_WARN = 5        # 최신 완료 크롤에서 이 개수 이상 누락이면 경고(사이트 차단 정황)
+# 최신 완료 크롤에서 이 개수 이상 누락이면 경고(19개 중 대부분 실패 = 크롤 전멸 수준).
+# 5였을 때 새 코드 첫 2회(누락 11·9)가 모두 경고 → 크롤러를 못 고치는 동안 매번 울려 알림 피로.
+# 통째 누락은 이전 run으로 채워져 손상이 없고, 데이터가 실제로 묵는 건 STALE_RUNS가 잡는다.
+MISSING_WARN = 15
 COVERAGE_WARN = 0.9     # 완료 카테고리 수집률(product_count/expected_urls) 하한
 RUN_ID_PATTERN = re.compile(r"^\d{8}(_\d{6})?$")   # 크롤 run_id(ds_nodash, 옛 YYYYMMDD_HHMMSS)
 MAX_REASONS = 10        # 리포트에 붙일 사유 줄 상한
