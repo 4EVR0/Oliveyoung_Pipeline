@@ -112,6 +112,15 @@ class DecideGateTest(unittest.TestCase):
         self.assertEqual(r.status, WARN)
         self.assertEqual(r.metrics["categories_missing"], 2)
 
+    def test_some_missing_without_stale_passes(self):
+        # 10/4 형태: 누락은 있지만 연속 누락이 없으면 통과(누락 수는 지표로만 남음)
+        cur = _manifest("20261004", done=TARGETS[:1])
+        prev = _manifest("20261001", done=TARGETS)
+        files = _files((TARGETS[0], "20261004"), (TARGETS[1], "20261001"), (TARGETS[2], "20261001"))
+        r = decide_gate(files, {"20261004": cur, "20261001": prev}, [cur, prev])
+        self.assertEqual(r.status, PASS)
+        self.assertEqual(r.metrics["categories_missing"], 2)
+
     def test_low_coverage_warns(self):
         m = _manifest("20261004", done=TARGETS, expected={TARGETS[0]: 100}, counts={TARGETS[0]: 50})
         r = decide_gate(_files(*ALL), {"20261004": m}, [m])
