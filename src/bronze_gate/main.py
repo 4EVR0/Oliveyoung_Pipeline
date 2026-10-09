@@ -1,6 +1,6 @@
-"""전처리 입력 품질 게이트 실행 — bronze_to_silver가 로드하기 직전에 같은 파일 목록으로 판정한다.
+"""전처리 입력 선택·품질 게이트 실행 — bronze_to_silver가 로드하기 직전에 입력을 고르고 판정한다.
 
-종료 코드: PASS·WARN·우회 진행 → 그대로 진행(반환), BLOCK → 99(DAG skip_on_exit_code),
+종료 코드: PASS·WARN·우회 진행 → 고른 입력을 돌려줌, BLOCK → 99(DAG skip_on_exit_code),
 BLOCK인데 DQ 기록 실패 → 1(알림 근거가 없으니 DAG 실패 알림으로 드러나게).
 """
 
@@ -17,15 +17,12 @@ from oliveyoung_common import s3_paths
 from oliveyoung_common.batch import build_run_id
 from oliveyoung_common.dq_metrics import write_dq_metrics
 from oliveyoung_common.logging import log_dq
-from src.bronze_gate.decide import (
-    BLOCK, MAX_REASONS, RUN_ID_PATTERN, GateResult, decide_gate, group_inputs,
-)
+from src.bronze_gate.decide import BLOCK, MAX_REASONS, GateResult, decide_gate, index_files, run_sort_key
 
 logger = logging.getLogger(__name__)
 
 STAGE = "bronze_gate"
 BLOCK_EXIT_CODE = 99
-RECENT_RUNS = 6                          # 연속 누락 계산에 쓰는 최근 완료 크롤 수
 _MANIFEST_PREFIX = "oliveyoung/_manifests/"
 
 
@@ -33,8 +30,8 @@ def _s3():
     return boto3.client("s3", region_name=S3.REGION)
 
 
-def _load_manifest(client, run_id: str) -> dict | None:
-    """manifest 조회. 없으면 None(판별 불가), 그 밖의 S3 오류는 그대로 올린다(fail-closed)."""
+def load_manifest(client, run_id: str) -> dict | None:
+    """manifest 조회. 없으면 None, 그 밖의 S3 오류는 그대로 올린다(fail-closed)."""
     try:
         obj = client.get_object(Bucket=S3.BUCKET, Key=s3_paths.manifest_key(run_id))
     except ClientError as exc:
@@ -44,27 +41,51 @@ def _load_manifest(client, run_id: str) -> dict | None:
     return json.loads(obj["Body"].read())
 
 
-def _recent_manifests(client, cache: dict[str, dict | None]) -> list[dict]:
-    """in_progress가 아닌 최근 크롤 manifest를 최신순으로 RECENT_RUNS개."""
+def list_bronze_files(client) -> list[str]:
+    """bronze 전체 파일 목록(s3://.../oliveyoung/main/sub/run_id=X/*.json). _manifests·_optimized 등은 제외."""
+    files = []
+    prefix = f"{S3.BRONZE_PREFIX}/"
+    for page in client.get_paginator("list_objects_v2").paginate(Bucket=S3.BUCKET, Prefix=prefix):
+        for obj in page.get("Contents", []):
+            key = obj["Key"]
+            parts = key[len(prefix):].split("/")
+            if len(parts) == 4 and parts[2].startswith("run_id=") and key.endswith(".json"):
+                files.append(f"s3://{S3.BUCKET}/{key}")
+    return files
+
+
+def list_manifest_runs(client) -> list[str]:
+    """manifest가 있는 정상 run_id 목록(part가 0개인 run 포함)."""
     run_ids = []
     for page in client.get_paginator("list_objects_v2").paginate(
         Bucket=S3.BUCKET, Prefix=_MANIFEST_PREFIX, Delimiter="/"
     ):
         for cp in page.get("CommonPrefixes", []):
             rid = cp["Prefix"][len(_MANIFEST_PREFIX):].strip("/").removeprefix("run_id=")
-            if RUN_ID_PATTERN.match(rid):
+            if run_sort_key(rid) is not None:
                 run_ids.append(rid)
+    return run_ids
 
-    recent = []
-    for rid in sorted(run_ids, reverse=True):
-        if rid not in cache:
-            cache[rid] = _load_manifest(client, rid)
-        manifest = cache[rid]
-        if manifest and manifest.get("status") != "in_progress":
-            recent.append(manifest)
-        if len(recent) >= RECENT_RUNS:
-            break
-    return recent
+
+def load_inputs(client) -> tuple[dict, dict]:
+    """(카테고리별 run 파일 색인, 정상 run_id별 manifest).
+
+    manifest를 **먼저** 스냅샷으로 읽고 그다음 파일 목록을 읽는다. 순서가 반대면 파일 목록을 읽은 뒤
+    크롤이 끝났을 때 "완료" manifest + 반쪽 파일 목록을 통과시킬 수 있다. 스냅샷 뒤에 파일이 생긴
+    새 run은 manifest 없음(None)으로 남아 후보에서 탈락한다. part가 0개인 run도 manifest로 보인다.
+    """
+    manifests = {rid: load_manifest(client, rid) for rid in sorted(list_manifest_runs(client))}
+    index = index_files(list_bronze_files(client))
+    for rid in {r for runs in index.values() for r in runs if run_sort_key(r) is not None}:
+        manifests.setdefault(rid, None)
+    return index, manifests
+
+
+def attach_source_run_id(raw_df):
+    """DuckDB filename 컬럼(파일 경로)에서 run_id를 뽑아 행 출처 source_run_id로 남긴다(정상·백필 공용)."""
+    if "filename" in raw_df.columns:
+        raw_df["source_run_id"] = raw_df.pop("filename").astype(str).str.extract(r"run_id=([^/]+)/", expand=False)
+    return raw_df
 
 
 def _override_requested() -> bool:
@@ -96,24 +117,24 @@ def _record(result: GateResult, batch_date: str) -> bool:
         return False
 
 
-def run_bronze_gate(latest_files: list[str], batch_date: str) -> GateResult:
-    """판정·기록 후 BLOCK이면 종료한다. 진행 가능하면 결과를 돌려준다."""
-    print("2-1. 입력 품질 게이트...")
+def run_bronze_gate(resolve_batch_date) -> GateResult:
+    """입력 선택·판정·기록 후 BLOCK이면 종료한다. 진행 가능하면 결과(고른 입력 포함)를 돌려준다.
+
+    resolve_batch_date(max_run_id): bronze_to_silver와 같은 batch_date 규칙(DQ 기록용).
+    """
+    print("2-1. 입력 선택·품질 게이트...")
     override = _override_requested()
-    client = _s3()
+    index, manifests = load_inputs(_s3())
+    if not index:
+        raise RuntimeError("bronze 파일을 찾지 못했습니다")
 
-    run_ids = sorted({rid for _, rid in group_inputs(latest_files) if RUN_ID_PATTERN.match(rid)})
-    manifests = {rid: _load_manifest(client, rid) for rid in run_ids}
-
-    try:
-        recent = _recent_manifests(client, dict(manifests))
-    except Exception as e:
-        # 누락·연속 누락 판정만 생략하고 부분 수집 판정은 그대로 수행
-        logger.warning("최근 manifest 조회 실패 — 누락 판정 생략: %s", e)
-        recent = []
-
-    result = decide_gate(latest_files, manifests, recent, override=override)
+    result = decide_gate(index, manifests, override=override)
+    selected = [rid for p in result.plans.values() if (rid := p.selected_run) and run_sort_key(rid)]
+    batch_date = resolve_batch_date(max(selected, key=run_sort_key) if selected else "")
     print(f"   판정: gate_status={result.status} {result.metrics}")
+    for p in sorted(result.plans.values(), key=lambda p: p.prefix):
+        logger.info("[입력] %s → %s (%s, %s일 전)%s", p.key or p.prefix, p.selected_run, p.status,
+                    p.age_days, f" 건너뜀: {p.skipped}" if p.skipped else "")
     recorded = _record(result, batch_date)
 
     if result.status == BLOCK:

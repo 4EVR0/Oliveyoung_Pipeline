@@ -21,8 +21,9 @@ from pyiceberg.expressions import And, EqualTo
 from config.settings import DuckDB, OliveyoungIceberg, S3
 from models.batch_metadata import BatchMetadata
 from oliveyoung_common import s3_paths
-from src.bronze_gate.decide import category_presence
-from silver_pipeline.write_silver import _build_arrow_table_for_silver
+from src.bronze_gate.decide import STALE, SUBSTITUTED, UNRESOLVED, files_for, select_inputs
+from src.bronze_gate.main import attach_source_run_id, load_inputs
+from silver_pipeline.write_silver import _build_arrow_table_for_silver, _load_and_evolve_table
 
 logger = logging.getLogger(__name__)
 STAGE = "bronze_to_silver_backfill"
@@ -85,77 +86,99 @@ def _existing(catalog, batch_date: str, batch_job: str) -> dict:
     }
 
 
-def _known_category_paths(con) -> set[str]:
-    """bronze에 한 번이라도 데이터가 있었던 카테고리 경로(main/sub). 구버전 manifest의 누락 기준."""
-    rows = con.execute(
-        "SELECT DISTINCT regexp_extract(file, '/([^/]+/[^/]+)/run_id=', 1) FROM glob(?)",
-        [S3.BRONZE_GLOB],
-    ).fetchall()
-    return {row[0] for row in rows if row[0]}
+def _select_for_run(source_run_id: str) -> tuple[dict, list[str], dict]:
+    """정상 전처리와 같은 선택 규칙을 기준 시점 = source_run_id로 적용 → (카테고리별 계획, 로드할 파일, manifest).
+
+    통째 누락·부분 수집·상품 수 50% 미만 카테고리는 source_run_id 이하의 이전 run으로 채운다.
+    이후 run은 보지 않는다. 그 시점에 데이터가 없던 카테고리(미래 카테고리)는 후보가 되지 않는다.
+    """
+    index, manifests = load_inputs(boto3.client("s3", region_name=S3.REGION))
+    source_manifest = manifests.get(source_run_id) or {}
+    targets = set(source_manifest.get("target_subcategories") or []) or None
+    plans, _ = select_inputs(index, manifests, as_of=source_run_id, targets=targets)
+    # 대상 밖(그 크롤의 수집 대상이 아님)·그 시점에 데이터가 없던 카테고리는 제외
+    plans = {k: p for k, p in plans.items() if p.targeted and (p.selected_run or p.skipped)}
+    return plans, files_for(plans, index), manifests
 
 
-def _category_gaps(con, manifest: dict, present_paths: list[str]) -> tuple[list[str], list[str] | None]:
-    """(누락 카테고리, 부분 수집 카테고리). 대상 목록이 있는 manifest만 부분 수집을 판별한다."""
-    if manifest.get("target_subcategories"):
-        presence = category_presence(manifest, manifest["target_subcategories"])
-        return (sorted(k for k, s in presence.items() if s == "missing"),
-                sorted(k for k, s in presence.items() if s == "partial"))
-    # 구버전: 완료 표시가 오염돼 부분 수집은 판별 불가. 누락은 경로 기준(part 0개)으로 정확하다.
-    return sorted(_known_category_paths(con) - set(present_paths)), None
+def check_integrity(plans: dict, manifests: dict, files: list[str], raw_df: pd.DataFrame) -> dict:
+    """선택된 run별 무결성: 로드한 파일이 그 run manifest의 part인지(rogue 없음),
+    run별 part product_count 합 == 그 run 출처(source_run_id) 로드 행수인지.
+    합계만 보면 run A −10, run B +10이 상쇄돼 통과하므로 run별로 비교한다.
+    이 크롤은 늘 "interrupted"라 status로는 막지 않는다.
+    """
+    discovered = {f.removeprefix(f"s3://{S3.BUCKET}/") for f in files}
+    part_counts, part_run, missing = {}, {}, set()
+    for plan in plans.values():
+        if not plan.selected_run:
+            continue
+        needle = f"{plan.prefix}/run_id={plan.selected_run}/"
+        for part in (manifests.get(plan.selected_run) or {}).get("parts", []):
+            key = part.get("key", "")
+            if key.startswith(needle):
+                part_counts[key] = part.get("product_count")
+                part_run[key] = plan.selected_run
+                if key not in discovered:
+                    missing.add(key)
+    rogue = discovered - set(part_counts)
+
+    expected: dict[str, int] = {}
+    for key in discovered & set(part_counts):
+        expected[part_run[key]] = expected.get(part_run[key], 0) + (part_counts[key] or 0)
+    actual = raw_df["source_run_id"].value_counts().to_dict() if "source_run_id" in raw_df else {}
+    mismatch = {rid: (expected.get(rid, 0), int(actual.get(rid, 0)))
+                for rid in sorted(set(expected) | set(actual))
+                if expected.get(rid, 0) != int(actual.get(rid, 0))}
+    return {"ok": not rogue and not mismatch, "missing_parts": sorted(missing),
+            "rogue_parts": sorted(rogue), "count_mismatch": mismatch}
 
 
 def preflight(catalog, con, source_run_id: str) -> tuple[dict, pd.DataFrame]:
     batch_job = _key(source_run_id)
     batch_date = _batch_date(catalog, source_run_id)
-    files = DuckDB.get_bronze_files_for_run(con, source_run_id)
     manifest = _manifest(source_run_id)
+    plans, files, manifests = _select_for_run(source_run_id)
+    if not files:
+        raise ValueError(f"선택된 Bronze 파일이 없습니다: source_run_id={source_run_id}")
     # A strict parse is deliberate: an unreadable part must fail, not silently
     # produce a plausible partial backfill.
     raw_df = con.execute(
-        "SELECT * FROM read_json_auto(?, ignore_errors=false, union_by_name=true)",
+        "SELECT * FROM read_json_auto(?, ignore_errors=false, union_by_name=true, filename=true)",
         [files],
     ).df()
-    categories = sorted({"/".join(f.split("/run_id=")[0].split("/")[-2:]) for f in files})
-    # manifest["parts"]: flat list of {key, part_num, category, subcategory,
-    # product_count, uploaded_at}. This crawl is chronically "interrupted" (no
-    # run in recent history reaches "completed"), so gating on status would
-    # block every backfill. We instead gate on *integrity*: no file exists in
-    # S3 that the manifest doesn't know about (rogue), and the parts that do
-    # exist account for exactly the rows we loaded. A category later deleted
-    # from S3 (e.g. 맨즈케어) only shrinks "missing_parts" (informational) and
-    # does not fail integrity, since the remaining parts' counts still match.
-    manifest_part_counts = {
-        part["key"]: part.get("product_count")
-        for part in manifest.get("parts", []) if "key" in part
-    }
-    manifest_parts = set(manifest_part_counts)
-    discovered_parts = {f.removeprefix(f"s3://{S3.BUCKET}/") for f in files}
-    rogue_parts = discovered_parts - manifest_parts
-    missing_parts = manifest_parts - discovered_parts
-    present_product_count = sum(
-        count for key, count in manifest_part_counts.items()
-        if key in discovered_parts and count is not None
-    )
-    manifest_integrity_ok = not rogue_parts and present_product_count == len(raw_df)
-    missing_subcategories, partial_subcategories = _category_gaps(con, manifest, categories)
+    raw_df = attach_source_run_id(raw_df)
+    integrity = check_integrity(plans, manifests, files, raw_df)
     existing = _existing(catalog, batch_date, batch_job)
+
+    def name(plan):
+        return plan.key or plan.prefix.split("/", 1)[-1]
+
     preview = {
         "source_run_id": source_run_id,
         "batch_date": batch_date,
         "batch_job": batch_job,
         "manifest_status": manifest.get("status", "unknown"),
         "manifest_total_products": manifest.get("total_products"),
-        "manifest_integrity_ok": manifest_integrity_ok,
-        # In manifest but no longer in S3 — informational only (e.g. a
-        # category retired after this run); does not block the backfill.
-        "manifest_missing_parts": sorted(missing_parts),
-        # In S3 but not in manifest — an actual integrity gap.
-        "manifest_rogue_parts": sorted(rogue_parts),
-        "subcategories": categories,
-        # 정상 전처리와 달리 백필은 이 run만 읽어, 누락 카테고리는 그 날짜 history에 아예 없다.
-        # 막지 않고 보이게 한다(부분 수집은 완료 표시가 정확한 manifest에서만, 아니면 None).
-        "missing_subcategories": missing_subcategories,
-        "partial_subcategories": partial_subcategories,
+        "manifest_integrity_ok": integrity["ok"],
+        # 선택된 run의 manifest엔 있으나 S3엔 없는 part — 정보용(의도적 삭제 가능)
+        "manifest_missing_parts": integrity["missing_parts"],
+        # S3엔 있으나 manifest가 모르는 part — 실제 무결성 이상
+        "manifest_rogue_parts": integrity["rogue_parts"],
+        # run별 행수 불일치 {run: (manifest 기대, 실제 로드)}
+        "manifest_count_mismatch": integrity["count_mismatch"],
+        "subcategories": sorted(name(p) for p in plans.values() if p.selected_run),
+        # 카테고리별 출처 run — 정상 전처리와 같은 규칙으로 고른 "그 시점 입력"
+        "input_sources": {
+            name(p): {"run": p.selected_run, "status": p.status, "age_days": p.age_days,
+                      "skipped": [f"{r} {why}" for r, why in p.skipped]}
+            for p in sorted(plans.values(), key=lambda p: p.prefix)
+        },
+        # 이전 run으로 채운 카테고리(통째 누락·부분 수집·상품 수 미달)
+        "filled_subcategories": sorted(name(p) for p in plans.values() if p.status in (STALE, SUBSTITUTED)),
+        # 버리고 대체한 카테고리(부분 수집 등)
+        "partial_subcategories": sorted(name(p) for p in plans.values() if p.status == SUBSTITUTED),
+        # 쓸 run이 없어 제외한 카테고리 — 그 날짜 history에 없다
+        "missing_subcategories": sorted(name(p) for p in plans.values() if p.status == UNRESOLVED),
         "part_count": len(files),
         "bronze_rows": len(raw_df),
         "existing": existing,
@@ -183,7 +206,8 @@ def _assert_safe(preview: dict, allow_incomplete: bool) -> None:
 
 
 def _replace_history(catalog, silver_df: pd.DataFrame, batch_date: str, batch_job: str) -> None:
-    table = catalog.load_table(OliveyoungIceberg.SILVER_HISTORY_TABLE)
+    # 정상 쓰기와 같은 스키마 진화(source_run_id 등)를 거쳐 새 컬럼이 빠지지 않게
+    table = _load_and_evolve_table(catalog, OliveyoungIceberg.SILVER_HISTORY_TABLE)
     arrow = (
         _build_arrow_table_for_silver(silver_df, table)
         if not silver_df.empty else pa.Table.from_batches([], schema=table.schema().as_arrow())
@@ -317,14 +341,19 @@ def _format_backfill_report(preview: dict, metrics: dict, allow_incomplete: bool
         top = ", ".join(f"{re.sub(r'[`\r\n]', '_', name)[:48]} {count:,}건"
                          for name, count in error_types[:5])
         lines.append(f"🔎 오류 유형 Top{min(len(error_types), 5)}   {top}")
-    missing = preview.get("missing_subcategories") or []
-    if missing:
-        names = ", ".join(re.sub(r"[`\r\n]", "_", name)[:40] for name in missing[:10])
-        more = f" 외 {len(missing) - 10}개" if len(missing) > 10 else ""
-        lines.append(f"📭 누락 카테고리 {len(missing):,}개   {names}{more} (이 날짜 history에 없음)")
+    def _names(items):
+        shown = ", ".join(re.sub(r"[`\r\n]", "_", n)[:40] for n in items[:10])
+        return shown + (f" 외 {len(items) - 10}개" if len(items) > 10 else "")
+
+    filled = preview.get("filled_subcategories") or []
+    if filled:
+        lines.append(f"🔁 이전 run으로 채움 {len(filled):,}개   {_names(filled)}")
     partial = preview.get("partial_subcategories") or []
     if partial:
-        lines.append(f"🧩 부분 수집 {len(partial):,}개   " + ", ".join(p[:40] for p in partial[:10]))
+        lines.append(f"🧩 부분 수집·상품 수 미달로 대체 {len(partial):,}개   {_names(partial)}")
+    missing = preview.get("missing_subcategories") or []
+    if missing:
+        lines.append(f"📭 쓸 run이 없어 제외 {len(missing):,}개   {_names(missing)} (이 날짜 history에 없음)")
     if preview.get("manifest_missing_parts"):
         lines.append(
             f"ℹ️ manifest엔 있으나 S3엔 없는 part {len(preview['manifest_missing_parts']):,}개"

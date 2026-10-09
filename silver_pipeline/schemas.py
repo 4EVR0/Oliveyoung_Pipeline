@@ -64,6 +64,7 @@ SILVER_SCHEMA = Schema(
     NestedField(15, "batch_job",               StringType(),      required=False),
     NestedField(16, "batch_date",              TimestamptzType(), required=False),
     NestedField(17, "goods_no",                StringType(),      required=False),  # 올리브영 상품번호(raw 통과)
+    NestedField(18, "source_run_id",           StringType(),      required=False),  # 행 출처 크롤 run(입력 선택 결과)
 )
 
 # DLQ 패턴: 에러 원인 추적에 필요한 컬럼만 유지

@@ -364,6 +364,11 @@ def _compile_product_name_norms(
     return compiled
 
 
+def _str_or_none(value) -> str | None:
+    """pandas NaN·None을 None으로(Arrow string 컬럼에 float NaN이 들어가지 않게)."""
+    return value if isinstance(value, str) and value else None
+
+
 def _clean_rows(
     df: pd.DataFrame,
     typo_list: list[dict],
@@ -395,6 +400,7 @@ def _clean_rows(
         main_category    = str(row.get('main_category', ''))
         sub_category     = str(row.get('sub_category', ''))
         goods_no         = str(row.get('goods_no', ''))
+        source_run_id    = _str_or_none(row.get('source_run_id'))   # 행 출처 크롤 run(입력 선택 결과)
 
         crawled_at_raw = row.get('crawled_at', None)
         try:
@@ -535,6 +541,7 @@ def _clean_rows(
             'product_url':             url,
             'crawled_at':              crawled_at,
             'goods_no':                goods_no,
+            'source_run_id':           source_run_id,
         })
 
     return interim_list, error_records
@@ -637,6 +644,7 @@ def _match_ingredients(
                 'product_url':             url,
                 'crawled_at':              crawled_at,
                 'goods_no':                row['goods_no'],
+                'source_run_id':           _str_or_none(row.get('source_run_id')),
             })
 
         if (residual_text

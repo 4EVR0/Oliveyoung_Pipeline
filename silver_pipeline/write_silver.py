@@ -103,10 +103,10 @@ def _add_missing_columns_as_none(df: pd.DataFrame, target_columns: list[str]) ->
 # Schema Evolution
 # ==========================================
 
-def _evolve_schema(table) -> None:
+def _evolve_schema(table, with_source_run_id: bool = False) -> None:
     """
-    테이블에 batch_job, batch_date, goods_no 컬럼이 없으면 추가합니다.
-    이미 존재하면 아무것도 하지 않습니다.
+    테이블에 batch_job, batch_date, goods_no(+ silver면 source_run_id) 컬럼이 없으면 추가합니다.
+    이미 존재하면 아무것도 하지 않습니다. 추가된 컬럼의 기존 행은 null.
     """
     existing = {f.name for f in table.schema().fields}
 
@@ -117,10 +117,16 @@ def _evolve_schema(table) -> None:
             update.add_column("batch_date", TimestamptzType())
         if "goods_no" not in existing:
             update.add_column("goods_no", StringType())
+        # 행 출처 크롤 run(입력 선택 결과) — silver current·history만. 2026-10-09 추가, 이전 행 null
+        if with_source_run_id and "source_run_id" not in existing:
+            update.add_column("source_run_id", StringType())
 
     # 참고:
     # update_schema() commit 이후에는 호출 측에서 table을 reload 해서
     # 최신 schema/table metadata를 다시 잡는 것이 안전하다.
+
+
+_SOURCE_RUN_ID_TABLES = {OliveyoungIceberg.SILVER_CURRENT_TABLE, OliveyoungIceberg.SILVER_HISTORY_TABLE}
 
 
 def _load_and_evolve_table(catalog, identifier: str):
@@ -130,7 +136,7 @@ def _load_and_evolve_table(catalog, identifier: str):
     table = catalog.load_table(identifier)
     before = {f.name for f in table.schema().fields}
 
-    _evolve_schema(table)
+    _evolve_schema(table, with_source_run_id=identifier in _SOURCE_RUN_ID_TABLES)
 
     # evolution 여부와 상관없이 reload 해서 최신 metadata 사용
     table = catalog.load_table(identifier)

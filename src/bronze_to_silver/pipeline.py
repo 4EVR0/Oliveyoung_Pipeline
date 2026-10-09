@@ -23,44 +23,38 @@ from silver_pipeline.write_silver import write_to_iceberg, write_csv_to_s3
 from oliveyoung_common.logging import log_dq
 from oliveyoung_common.dq_metrics import write_dq_metrics
 from oliveyoung_common.batch import build_run_id, batch_date_from_run_id
-from src.bronze_gate.main import run_bronze_gate
+from src.bronze_gate.main import attach_source_run_id, run_bronze_gate
 
 logger = logging.getLogger(__name__)
 
 
 def load_bronze_data(con):
     """
-    DuckDB 커넥션으로 최신 run_id bronze 파일을 로드합니다.
+    입력 선택·품질 게이트가 카테고리마다 고른 bronze 파일을 DuckDB로 로드합니다.
 
     Returns:
-        (raw_df, source_run_id): bronze raw 데이터 + 소스 run_id(max, 단독 실행 batch_date 파생용)
+        (raw_df, max_run_id): bronze raw 데이터(행마다 source_run_id) + 선택된 run_id 최댓값(단독 실행 batch_date 파생용)
     """
-    print("2. 최신 run_id bronze 파일 탐색...")
-    try:
-        latest_files = DuckDB.get_latest_bronze_files(con)
-    except RuntimeError as e:
-        print(f"[ERROR] {e}")
-        sys.exit(1)
-
-    # 로드한 파일 경로에서 소스 run_id(max) 추출 — 단독 실행 시 batch_date 파생용
+    print("2. 입력 선택 + bronze 파일 탐색...")
+    # 카테고리마다 쓸 run을 고르고 판정(보류면 여기서 종료, 쓰기 없음). 고른 목록 그대로 로드한다.
+    gate = run_bronze_gate(_resolve_batch_date)
+    latest_files = gate.files
     run_ids = [m.group(1) for f in latest_files if (m := re.search(r"run_id=([^/]+)/", f))]
-    source_run_id = max(run_ids) if run_ids else ""
-
-    # 같은 파일 목록으로 로드 직전에 판정(보류면 여기서 종료, 쓰기 없음)
-    run_bronze_gate(latest_files, _resolve_batch_date(source_run_id))
+    max_run_id = max(run_ids) if run_ids else ""
 
     print(f"3. Bronze 데이터 로드 ({len(latest_files)}개 파일)...")
     try:
         file_list_sql = ", ".join(f"'{f}'" for f in latest_files)
         raw_df = con.execute(
-            f"SELECT * FROM read_json_auto([{file_list_sql}], ignore_errors=true)"
+            f"SELECT * FROM read_json_auto([{file_list_sql}], ignore_errors=true, filename=true)"
         ).df()
     except Exception as e:
         print(f"[ERROR] JSON 로드 실패: {e}")
         sys.exit(1)
+    raw_df = attach_source_run_id(raw_df)
     print(f"   로드 완료: {len(raw_df)}건\n")
 
-    return raw_df, source_run_id
+    return raw_df, max_run_id
 
 
 def _resolve_batch_date(source_run_id: str) -> str:
@@ -114,10 +108,10 @@ def run_pipeline():
     print("1. DuckDB 커넥션 설정...")
     con = DuckDB.get_connection()
 
-    raw_df, source_run_id = load_bronze_data(con)
+    raw_df, max_run_id = load_bronze_data(con)
     dicts  = load_dictionaries()
 
-    batch_date = _resolve_batch_date(source_run_id)
+    batch_date = _resolve_batch_date(max_run_id)
 
     print("9. 전처리 파이프라인 실행...")
     silver_df, error_df = process_pipeline(
