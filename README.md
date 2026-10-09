@@ -8,7 +8,8 @@
 
 ```
 Bronze (S3 JSON)
-  └ DuckDB 로 서브카테고리별 최신 run_id 파일만 로드
+  └ 입력 선택 게이트(src/bronze_gate)가 카테고리마다 쓸 run을 고른 뒤 DuckDB 로 로드
+    (진행 중·비정상 run 제외, 부분 수집·상품 수 50% 미만은 이전 run으로 대체, 행마다 source_run_id 기록)
 Silver (Iceberg · oliveyoung_db)
   ├ oliveyoung_silver_current    최신 스냅샷 (overwrite)
   ├ oliveyoung_silver_history    시계열 누적 (append)

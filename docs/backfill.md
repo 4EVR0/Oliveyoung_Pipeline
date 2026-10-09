@@ -1,6 +1,6 @@
 # 올리브영 과거 배치 백필 배포·운영 가이드
 
-EC2 Airflow의 수동 `oliveyoung_backfill` DAG는 한 크롤 `source_run_id`의 Bronze JSON 전체를 **현재 사전·정제 규칙**으로 재처리한다. 쓰기 대상은 `silver_history`와 DQ `stage=bronze_to_silver_backfill`뿐이다. `silver_current`·`silver_error`·gold·CDC·Neo4j는 쓰지 않는다. **그래프 자동 정합이나 과거 시점 규칙의 재현은 보장하지 않는다.**
+EC2 Airflow의 수동 `oliveyoung_backfill` DAG는 크롤 `source_run_id` 시점의 Bronze 입력을 **현재 사전·정제 규칙**으로 재처리한다. 입력은 정상 전처리와 같은 선택 규칙(`src/bronze_gate/decide.py:select_inputs`, 기준 시점 = `source_run_id`)으로 고른다: 그 run에서 통째 누락·부분 수집·상품 수 50% 미만인 카테고리는 **`source_run_id` 이하의 이전 run**으로 채우고(이후 run은 보지 않음), 쓸 run이 없으면 그 카테고리를 제외한다. dry-run 프리뷰의 `input_sources`(카테고리별 출처 run·나이·건너뛴 run)와 `filled_subcategories`·`missing_subcategories`로 확인한다(2026-10-09, 이전 백필은 지정 run만 읽었음). 쓰기 대상은 `silver_history`와 DQ `stage=bronze_to_silver_backfill`뿐이다. `silver_current`·`silver_error`·gold·CDC·Neo4j는 쓰지 않는다. **그래프 자동 정합이나 과거 시점 규칙의 재현은 보장하지 않는다.**
 
 ## 구현 경과 (2026-09-19~21)
 
@@ -67,7 +67,8 @@ EC2 Airflow의 수동 `oliveyoung_backfill` DAG는 한 크롤 `source_run_id`의
 |---|---|
 | `batch_date` | crawl DQ에서 조회한 논리 날짜가 기대값인지 |
 | `manifest_status` | 참고용. 이 크롤은 만성적으로 `interrupted`이므로 이 값만으로 apply를 막지 않는다 |
-| `manifest_integrity_ok` | **게이트.** `false`면 `allow_incomplete`가 필요(S3에 manifest가 모르는 파일이 있거나, 존재하는 part의 product_count 합이 로드 행수와 다름) |
+| `manifest_integrity_ok` | **게이트.** `false`면 `allow_incomplete`가 필요(S3에 manifest가 모르는 파일이 있거나, **선택된 run별로** 존재하는 part의 product_count 합이 그 run 출처 로드 행수와 다름 — 합계만 맞고 run끼리 상쇄돼도 실패) |
+| `manifest_count_mismatch` | run별 행수 불일치 `{run: [manifest 기대, 실제 로드]}`. 비어 있어야 함 |
 | `manifest_missing_parts` | manifest엔 있으나 S3엔 없는 part. 정보용(카테고리가 나중에 삭제됐을 수 있음) — 값이 있어도 게이트 아님 |
 | `manifest_rogue_parts` | S3엔 있으나 manifest가 모르는 part. **비어 있어야 함** — 값이 있으면 `manifest_integrity_ok=false`가 되고 원인 조사 필요 |
 | `manifest_status == "in_progress"` | **하드 리젝**(override 불가). 크롤이 아직 쓰는 중이니 완료까지 대기 |
