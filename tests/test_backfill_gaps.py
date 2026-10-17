@@ -97,9 +97,11 @@ class BackfillReportTest(unittest.TestCase):
         preview = {**PREVIEW, "bronze_rows": 3071, "missing_subcategories": ["클렌징/오일/밤"]}
         error_df = MagicMock()
         error_df.__len__.return_value = 0
-        with patch.object(backfill, "pa", MagicMock()):
+        with patch.object(backfill, "write_dq_metrics") as write:
             metrics = backfill._replace_dq(catalog, preview, error_df, 2128)
         self.assertEqual(metrics["categories_missing"], 1)
+        self.assertEqual(write.call_args.kwargs["categories_missing"], 1)
+        self.assertEqual(write.call_args.kwargs["replace"], "same_run")
 
 
 if __name__ == "__main__":

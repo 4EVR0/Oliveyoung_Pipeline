@@ -109,6 +109,7 @@ def _record(result: GateResult, batch_date: str) -> bool:
             run_id=run_id,
             report_webhook=os.environ.get("DISCORD_DQ_WEBHOOK_URL"),
             report_lines=result.reasons[:MAX_REASONS],
+            replace="other_runs",   # 같은 batch_date 이전 판정 기록 교체(재실행 멱등)
             **result.metrics,
         )
         return True

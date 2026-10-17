@@ -18,8 +18,10 @@ COMMON = dict(
         "AWS_SECRET_ACCESS_KEY": os.environ.get("AWS_SECRET_ACCESS_KEY", ""),
         "LOG_FORMAT": "json",
         "LOG_LEVEL": "INFO",
-        # 크롤 DAG conf에서 전파된 논리 배치 날짜 → 전 스테이지 공유(없으면 각자 파생)
+        # 크롤 DAG conf에서 전파된 논리 배치 날짜 → 전 스테이지 공유
         "BATCH_DATE": "{{ dag_run.conf.get('batch_date', '') }}",
+        # 재실행 멱등 교체 키가 batch_date라, 비면 bronze_to_silver·silver_to_gold가 중단(실행 시각 파생 금지)
+        "REQUIRE_BATCH_DATE": "1",
         # bronze/silver 완료 리포트용 웹훅(없으면 미전송)
         "DISCORD_DQ_WEBHOOK_URL": os.environ.get("DISCORD_DQ_WEBHOOK_URL", ""),
         # 입력 품질 게이트 우회(운영자 판단 시 conf {"gate": "skip"}, 판정·기록은 그대로)

@@ -98,7 +98,16 @@ def write_gold_product_ingredients(
         match_rate=round(float(match_rate), 4),
     )
     log_dq(logger, stage="silver_to_gold", batch_job=batch_job, **metrics)
-    # 테이블 적재 실패가 파이프라인을 깨지 않도록 비치명적 처리
+
+    result_df["batch_job"]  = batch_job
+    result_df["batch_date"] = pd.to_datetime(batch_date, utc=True)
+
+    gold_table  = catalog.load_table(OliveyoungIceberg.GOLD_PRODUCT_INGREDIENTS_TABLE)
+    arrow_table = _build_arrow(result_df, gold_table)
+    gold_table.overwrite(arrow_table, overwrite_filter=AlwaysTrue())
+
+    # DQ·완료 리포트는 데이터 쓰기 성공 뒤에 남긴다(실패한 적재가 "완료"로 보이지 않게).
+    # 같은 batch_date의 이전 실행 기록은 교체(재실행 멱등). 테이블 적재 실패는 비치명적.
     try:
         write_dq_metrics(
             catalog,
@@ -107,16 +116,10 @@ def write_gold_product_ingredients(
             run_id=batch_job,
             target_table=OliveyoungIceberg.GOLD_PRODUCT_INGREDIENTS_TABLE,
             report_webhook=os.environ.get("DISCORD_DQ_WEBHOOK_URL"),  # 완료 리포트(옵트인)
+            replace="other_runs",
             **metrics,
         )
     except Exception as e:
         logger.warning(f"dq_metrics 적재 실패(무시): {e}")
-
-    result_df["batch_job"]  = batch_job
-    result_df["batch_date"] = pd.to_datetime(batch_date, utc=True)
-
-    gold_table  = catalog.load_table(OliveyoungIceberg.GOLD_PRODUCT_INGREDIENTS_TABLE)
-    arrow_table = _build_arrow(result_df, gold_table)
-    gold_table.overwrite(arrow_table, overwrite_filter=AlwaysTrue())
 
     logger.info(f"gold_product_ingredients overwrite 완료: {total}건")

@@ -10,6 +10,7 @@ import logging
 import duckdb
 import pandas as pd
 import pyarrow as pa
+from pyiceberg.expressions import And, EqualTo, NotEqualTo
 from pyiceberg.types import StringType, TimestamptzType
 
 from config.settings import OliveyoungIceberg
@@ -146,9 +147,24 @@ ORDER BY category_id, rank
 """
 
 
+def _replace_batch(table, arrow_table: pa.Table, batch: BatchMetadata) -> int:
+    """같은 batch_date의 이전 실행 행을 지우고 쓴다(재실행 멱등). 지운 행 수를 돌려준다.
+
+    silver_to_gold는 CDC 입력 스냅샷(current/history)을 만들지 않아 재실행해도 같은 결과를
+    다시 계산한다 → 이전 실행 행만 교체하면 한 벌로 유지된다. 지울 행이 없으면 append.
+    """
+    selector = And(EqualTo("batch_date", batch.batch_date), NotEqualTo("batch_job", batch.batch_job))
+    replaced = table.scan(row_filter=selector, selected_fields=("batch_job",)).to_arrow().num_rows
+    if replaced:
+        table.overwrite(arrow_table, overwrite_filter=selector)
+    else:
+        table.append(arrow_table)
+    return replaced
+
+
 def write_gold_ingredient_frequency(catalog, batch: BatchMetadata) -> None:
     """
-    silver_current 데이터를 집계하여 gold_ingredient_frequency 에 append 합니다.
+    silver_current 데이터를 집계하여 gold_ingredient_frequency 에 기록합니다(같은 batch_date 교체).
 
     Args:
         catalog   : pyiceberg Catalog 인스턴스
@@ -172,22 +188,23 @@ def write_gold_ingredient_frequency(catalog, batch: BatchMetadata) -> None:
 
     gold_table  = _load_with_batch_metadata_columns(catalog, OliveyoungIceberg.GOLD_INGREDIENT_FREQUENCY_TABLE)
     arrow_table = _build_arrow(gold_df, gold_table)
-    gold_table.append(arrow_table)
+    replaced = _replace_batch(gold_table, arrow_table, batch)
 
-    logger.info(f"gold_ingredient_frequency append 완료: {len(gold_df)}건")
+    logger.info(f"gold_ingredient_frequency 기록 완료: {len(gold_df)}건 (교체 {replaced}건)")
 
 
 # ==========================================
 # gold_product_change_log
 # ==========================================
 
-def write_gold_change_log(catalog, change_df: pd.DataFrame) -> None:
+def write_gold_change_log(catalog, change_df: pd.DataFrame, batch: BatchMetadata) -> None:
     """
-    CDC 결과 DataFrame을 gold_product_change_log 에 append 합니다.
+    CDC 결과 DataFrame을 gold_product_change_log 에 기록합니다(같은 batch_date 교체).
 
     Args:
         catalog   : pyiceberg Catalog 인스턴스
         change_df : cdc.compute_change_log() 반환값
+        batch     : 현재 배치 메타데이터(교체 범위: 같은 batch_date의 이전 실행)
     """
     if change_df is None or change_df.empty:
         logger.info("변경 레코드 없음 — gold_product_change_log write 건너뜀")
@@ -203,12 +220,12 @@ def write_gold_change_log(catalog, change_df: pd.DataFrame) -> None:
         logger.info("schema evolve 완료: gold_product_change_log goods_no 추가")
 
     arrow_table  = _build_arrow(change_df, change_table)
-    change_table.append(arrow_table)
+    replaced     = _replace_batch(change_table, arrow_table, batch)
 
     new_cnt     = (change_df["change_type"] == "NEW").sum()
     removed_cnt = (change_df["change_type"] == "REMOVED").sum()
     changed_cnt = (change_df["change_type"] == "CHANGED").sum()
     logger.info(
-        f"gold_product_change_log append 완료: "
-        f"NEW={new_cnt}건  REMOVED={removed_cnt}건  CHANGED={changed_cnt}건"
+        f"gold_product_change_log 기록 완료: "
+        f"NEW={new_cnt}건  REMOVED={removed_cnt}건  CHANGED={changed_cnt}건 (교체 {replaced}건)"
     )

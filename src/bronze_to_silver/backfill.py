@@ -14,7 +14,6 @@ from datetime import datetime, timezone
 
 import boto3
 import pandas as pd
-import pyarrow as pa
 from botocore.exceptions import ClientError
 from pyiceberg.expressions import And, EqualTo
 
@@ -23,7 +22,8 @@ from models.batch_metadata import BatchMetadata
 from oliveyoung_common import s3_paths
 from src.bronze_gate.decide import STALE, SUBSTITUTED, UNRESOLVED, files_for, select_inputs
 from src.bronze_gate.main import attach_source_run_id, load_inputs
-from silver_pipeline.write_silver import _build_arrow_table_for_silver, _load_and_evolve_table
+from oliveyoung_common.dq_metrics import write_dq_metrics
+from silver_pipeline.write_silver import replace_history
 
 logger = logging.getLogger(__name__)
 STAGE = "bronze_to_silver_backfill"
@@ -206,17 +206,8 @@ def _assert_safe(preview: dict, allow_incomplete: bool) -> None:
 
 
 def _replace_history(catalog, silver_df: pd.DataFrame, batch_date: str, batch_job: str) -> None:
-    # 정상 쓰기와 같은 스키마 진화(source_run_id 등)를 거쳐 새 컬럼이 빠지지 않게
-    table = _load_and_evolve_table(catalog, OliveyoungIceberg.SILVER_HISTORY_TABLE)
-    arrow = (
-        _build_arrow_table_for_silver(silver_df, table)
-        if not silver_df.empty else pa.Table.from_batches([], schema=table.schema().as_arrow())
-    )
-    day = datetime.strptime(batch_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
-    table.overwrite(
-        arrow,
-        overwrite_filter=And(EqualTo("batch_date", day), EqualTo("batch_job", batch_job)),
-    )
+    # 정상 실행과 같은 교체 부품 — 같은 날짜·같은 백필 키 행만 교체(정상 행 보존)
+    replace_history(catalog, silver_df, batch_date, batch_job, scope="backfill")
 
 
 def _replace_dq(catalog, preview: dict, error_df: pd.DataFrame, silver_count: int) -> dict:
@@ -238,24 +229,17 @@ def _replace_dq(catalog, preview: dict, error_df: pd.DataFrame, silver_count: in
         if sum(v for k, v in metrics.items() if k.startswith("err_")) != error_count:
             raise ValueError("error_type 합계가 silver_error와 다릅니다")
 
-    table = catalog.load_table(OliveyoungIceberg.DQ_METRICS_TABLE)
-    now = datetime.now(timezone.utc)
-    rows = [{
-        "batch_date": preview["batch_date"],
-        "run_id": preview["batch_job"],
-        "stage": STAGE,
-        "metric_name": name,
-        "metric_value": float(value),
-        "target_table": OliveyoungIceberg.SILVER_HISTORY_TABLE,
-        "created_at": now,
-    } for name, value in metrics.items()]
-    arrow = pa.Table.from_pylist(rows, schema=table.schema().as_arrow())
-    table.overwrite(
-        arrow,
-        overwrite_filter=And(
-            And(EqualTo("stage", STAGE), EqualTo("batch_date", preview["batch_date"])),
-            EqualTo("run_id", preview["batch_job"]),
-        ),
+    # 정상 실행과 같은 공용 DQ 기록 — 백필 키(run_id 고정)라 같은 run_id 행을 교체.
+    # 실패는 예외로 올라가 태스크 실패(백필은 DQ가 검증 대상이라 비치명 처리 안 함).
+    write_dq_metrics(
+        catalog,
+        stage=STAGE,
+        batch_date=preview["batch_date"],
+        run_id=preview["batch_job"],
+        target_table=OliveyoungIceberg.SILVER_HISTORY_TABLE,
+        created_at=datetime.now(timezone.utc),
+        replace="same_run",
+        **metrics,
     )
     return metrics
 
