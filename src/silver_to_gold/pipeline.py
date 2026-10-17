@@ -10,14 +10,18 @@ from config.settings import OliveyoungIceberg
 from gold_pipeline.cdc import compute_change_log
 from gold_pipeline.write_gold import write_gold_change_log, write_gold_ingredient_frequency
 from gold_pipeline.write_gold_product_ingredients import write_gold_product_ingredients
-from models.batch_metadata import BatchMetadata, create_batch_metadata
+from models.batch_metadata import BatchMetadata, check_batch_date_required, create_batch_metadata
 from oliveyoung_common.batch import batch_date_from_run_id
 
 logger = logging.getLogger(__name__)
 
 
 def run_pipeline():
-    """Silver → Gold 파이프라인 전체를 실행합니다."""
+    """Silver → Gold 파이프라인 전체를 실행합니다.
+
+    재실행 멱등: change_log·frequency·DQ는 같은 batch_date의 이전 실행 행을 교체한다.
+    """
+    check_batch_date_required()
     batch_base = create_batch_metadata("iceberg_silver_to_gold")
     # 단계 관통 논리 배치 날짜 — Airflow가 BATCH_DATE로 주입, 단독 실행 시 run_id에서 파생
     batch_date_str = os.environ.get("BATCH_DATE") or batch_date_from_run_id(batch_base.run_id)
@@ -30,7 +34,7 @@ def run_pipeline():
 
     logger.info("[Step 1] CDC — silver 변경 분석 → gold_product_change_log")
     change_df = compute_change_log(catalog, batch=batch)
-    write_gold_change_log(catalog, change_df)
+    write_gold_change_log(catalog, change_df, batch)
 
     logger.info("[Step 2] 성분 빈도 집계 — silver_current → gold_ingredient_frequency")
     write_gold_ingredient_frequency(catalog, batch=batch)

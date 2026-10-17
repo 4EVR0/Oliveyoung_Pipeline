@@ -6,8 +6,12 @@ import logging
 import os
 import re
 import sys
+from datetime import datetime, timezone
+
+from pyiceberg.expressions import And, EqualTo
 
 from config.settings import OliveyoungIceberg, INCIIceberg, DuckDB
+from models.batch_metadata import check_batch_date_required, create_batch_metadata
 from models.pipeline_models import Dictionaries
 from src.bronze_to_silver.ac_builder import (
     generate_kcia_mapping_dict,
@@ -101,9 +105,34 @@ def load_dictionaries() -> Dictionaries:
     )
 
 
+def _verify_silver(batch_date: str, batch_job: str, silver_count: int) -> None:
+    """쓰기 후 재조회 — history의 이번 실행 행 수와 current 행 수가 정제 결과와 같아야 한다."""
+    if silver_count == 0:
+        return  # 0건이면 history/current를 쓰지 않으므로 비교 대상 없음
+    catalog = OliveyoungIceberg.get_catalog()
+    day = datetime.strptime(batch_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    history = catalog.load_table(OliveyoungIceberg.SILVER_HISTORY_TABLE)
+    history_count = history.scan(
+        row_filter=And(EqualTo("batch_date", day), EqualTo("batch_job", batch_job)),
+        selected_fields=("batch_job",),
+    ).to_arrow().num_rows
+    current_count = catalog.load_table(OliveyoungIceberg.SILVER_CURRENT_TABLE).scan(
+        selected_fields=("product_id",)
+    ).to_arrow().num_rows
+    if history_count != silver_count or current_count != silver_count:
+        raise RuntimeError(
+            f"Silver 적재 검증 실패: 정제 {silver_count}건, history {history_count}건, current {current_count}건"
+        )
+
+
 def run_pipeline():
-    """Bronze → Silver 전처리 파이프라인 전체를 실행합니다."""
+    """Bronze → Silver 전처리 파이프라인 전체를 실행합니다.
+
+    재실행 멱등: 같은 batch_date의 이전 정상 실행 결과(history·DQ)를 교체한다.
+    쓰기 순서는 Silver(history → error → current) → 재조회 검증 → DQ·리포트 → CSV.
+    """
     print("=== Bronze → Silver 전처리 시작 ===\n")
+    check_batch_date_required()
 
     print("1. DuckDB 커넥션 설정...")
     con = DuckDB.get_connection()
@@ -112,6 +141,9 @@ def run_pipeline():
     dicts  = load_dictionaries()
 
     batch_date = _resolve_batch_date(max_run_id)
+    # 이 실행의 식별자 하나를 history 행(batch_job)과 DQ(run_id)에 같이 쓴다
+    batch = create_batch_metadata("bronze_to_silver")
+    batch_job = batch.run_id
 
     print("9. 전처리 파이프라인 실행...")
     silver_df, error_df = process_pipeline(
@@ -121,15 +153,21 @@ def run_pipeline():
         typo_regex_list        = dicts.typo_regex_list,
         garbage_config         = dicts.garbage_config,
         product_name_norm_list = dicts.product_name_norm_list,
+        batch                  = batch,
         batch_date             = batch_date,
     )
     print(f"   정상: {len(silver_df)}건 / 에러: {len(error_df)}건\n")
+
+    print("10. Iceberg write...")
+    replaced = write_to_iceberg(silver_df, error_df, batch_date, batch_job)
+    if replaced:
+        logger.info(f"같은 batch_date({batch_date})의 이전 정상 실행 history {replaced}건을 교체(재실행)")
+    _verify_silver(batch_date, batch_job, len(silver_df))
 
     # 정합성 메트릭 — 적재 보존(bronze 로드) + 전처리(정상/에러)
     # 에러율은 출력 안에서 닫힌 비율(dedup 영향 없음) — 점수판/임계값용
     processed = len(silver_df) + len(error_df)
     error_rate = round(len(error_df) / processed, 4) if processed else 0.0
-    batch_job = build_run_id("bronze_to_silver")   # 이 run의 유니크 식별(run_id 컬럼용)
     metrics = dict(
         bronze_loaded=len(raw_df),
         silver_ok=len(silver_df),
@@ -148,6 +186,7 @@ def run_pipeline():
             run_id=batch_job,
             target_table=OliveyoungIceberg.SILVER_CURRENT_TABLE,
             report_webhook=os.environ.get("DISCORD_DQ_WEBHOOK_URL"),  # 완료 리포트(옵트인)
+            replace="other_runs",   # 같은 batch_date 이전 실행 기록 교체(재실행이면 리포트에 표시)
             **metrics,
         )
     except Exception as e:
@@ -172,14 +211,13 @@ def run_pipeline():
                 run_id=batch_job,
                 target_table=OliveyoungIceberg.SILVER_ERROR_TABLE,
                 # report_webhook 미전달 → 요약만 리포트, 유형별은 저장만
+                replace="other_runs",   # 같은 실행의 요약 행은 run_id가 같아 지우지 않음
                 **err_counts,
             )
         except Exception as e:
             logger.warning(f"error_type dq_metrics 적재 실패(무시): {e}")
 
-    print("10. Iceberg write...")
-    write_to_iceberg(silver_df, error_df)
-
+    # CSV는 실행 시각 파일명이라 재실행마다 새 파일 — 원본 데이터가 아니므로 멱등 대상 아님
     print("\n11. CSV 저장 (s3 data_csv/)...")
     write_csv_to_s3(silver_df, error_df)
 

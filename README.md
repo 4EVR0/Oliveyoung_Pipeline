@@ -12,12 +12,12 @@ Bronze (S3 JSON)
     (진행 중·비정상 run 제외, 부분 수집·상품 수 50% 미만은 이전 run으로 대체, 행마다 source_run_id 기록)
 Silver (Iceberg · oliveyoung_db)
   ├ oliveyoung_silver_current    최신 스냅샷 (overwrite)
-  ├ oliveyoung_silver_history    시계열 누적 (append)
+  ├ oliveyoung_silver_history    시계열 누적 (같은 batch_date는 교체)
   └ oliveyoung_silver_error      처리 실패 DLQ (overwrite)
 Gold (Iceberg · oliveyoung_db)
   ├ gold_product_ingredients     성분 × INCI 메타데이터 mart (overwrite)
-  ├ gold_ingredient_frequency    카테고리별 Top 50 성분 (append)
-  └ gold_product_change_log      CDC 변경 이력 NEW/REMOVED/CHANGED (append)
+  ├ gold_ingredient_frequency    카테고리별 Top 50 성분 (같은 batch_date는 교체)
+  └ gold_product_change_log      CDC 변경 이력 NEW/REMOVED/CHANGED (같은 batch_date는 교체)
 Neo4j (GraphDB)
   └ change_log 미처리 배치를 읽어 Product/CONTAINS 증분 반영 (checkpoint 기반)
 ```
@@ -146,8 +146,8 @@ CSV 익스포트는 그래프를 처음 채울 때만 쓴다
 ### Gold
 
 - `gold_product_ingredients` — 성분 × INCI 메타데이터(INCI/한글명/기능/규제/사용수). overwrite
-- `gold_ingredient_frequency` — 카테고리별·전체(TOTAL) Top 50 성분. append
-- `gold_product_change_log` — `change_type` = NEW / REMOVED / CHANGED. append
+- `gold_ingredient_frequency` — 카테고리별·전체(TOTAL) Top 50 성분. 배치 누적, 같은 batch_date는 교체
+- `gold_product_change_log` — `change_type` = NEW / REMOVED / CHANGED. 배치 누적, 같은 batch_date는 교체
 
 ### Silver Error (DLQ)
 
@@ -190,7 +190,8 @@ Airflow UI에서 `source_run_id`를 넣고 `dry-run`을 먼저 실행해 manifes
 
 ## 설계 메모
 
-- **current / history 분리** — 최신 조회용(`current`, overwrite)과 시계열 추적용(`history`, append)을 나눠 재읽기 없이 변화를 본다.
+- **current / history 분리** — 최신 조회용(`current`, overwrite)과 시계열 추적용(`history`, 배치 누적)을 나눠 재읽기 없이 변화를 본다.
+- **재실행 멱등** — 실패한 태스크를 Clear·재실행하거나 같은 `batch_date`를 다시 돌려도 결과가 한 벌이다. history·frequency·change_log·`dq_metrics`는 같은 `batch_date`의 이전 실행 행을 조건부 overwrite로 교체하고(백필 행은 보존), bronze→silver는 history → error → current 순서로 쓴 뒤 재조회 검증하고 DQ·리포트를 남긴다. current를 마지막에 쓰는 이유는 CDC가 current 최근 두 스냅샷을 비교하기 때문. Airflow 실행은 `BATCH_DATE`가 비면 중단한다(교체 키 보호). 재실행이면 완료 리포트 제목에 `(재실행)`이 붙는다. 단, `neo4j_incremental`까지 성공한 배치의 silver_to_gold는 다시 돌리지 않는다(그래프 재반영).
 - **CDC = Iceberg 스냅샷 비교** — 전체 스캔 없이 최신 2개 스냅샷의 `product_id` 집합·추적 필드 차이로 변경분을 뽑는다.
 - **Neo4j 증분 + checkpoint** — `neo4j_sync_checkpoint` 에 마지막 처리 배치를 남겨 change_log 의 신규분만 그래프에 반영한다.
 - **Aho-Corasick 매칭** — 수천 개 표준명을 한 번의 스캔으로 동시 탐색. 성분명 내부 쉼표는 마스킹으로 분리.

@@ -6,15 +6,21 @@ Silver / Silver Error 테이블 Iceberg write + CSV 저장 모듈
 """
 
 import io
+from datetime import datetime, timezone
 from typing import Any
 
 import boto3
 import pandas as pd
 import pyarrow as pa
+from pyiceberg.expressions import And, EqualTo, StartsWith
 from pyiceberg.types import StringType, TimestamptzType
 
 from config.settings import S3, OliveyoungIceberg
 from oliveyoung_common.batch import build_run_id
+
+# 정상 실행 history 행의 batch_job 접두어(create_batch_metadata("bronze_to_silver").run_id).
+# 백필 행은 backfill_<source_run_id>라 이 접두어로 정상 교체 범위에서 빠진다.
+NORMAL_BATCH_JOB_PREFIX = "bronze_to_silver_"
 
 
 # ==========================================
@@ -246,44 +252,77 @@ def _build_arrow_table_for_error(df: pd.DataFrame, table) -> pa.Table:
 # Iceberg write
 # ==========================================
 
+def replace_history(catalog, silver_df: pd.DataFrame, batch_date: str,
+                    batch_job: str, scope: str) -> int:
+    """silver_history에서 같은 batch_date의 기존 행을 교체한다(재실행 멱등). 지운 행 수를 돌려준다.
+
+    scope="normal"  : 같은 날짜의 정상 실행 행(batch_job 접두어) — 백필 행은 보존
+    scope="backfill": 같은 날짜·같은 백필 키(batch_job) 행
+    지울 행이 없으면 append(빈 delete 스냅샷·경고 방지). CDC NEW는 history 최근 두 스냅샷을
+    비교하는데, 재실행 때 삭제 스냅샷이 '이 배치를 지운 상태'라 첫 실행과 같은 결과가 나온다.
+    """
+    if scope not in ("normal", "backfill"):
+        raise ValueError(f"scope는 normal|backfill: {scope!r}")
+    table = _load_and_evolve_table(catalog, OliveyoungIceberg.SILVER_HISTORY_TABLE)
+    arrow = (
+        _build_arrow_table_for_silver(silver_df, table)
+        if not silver_df.empty else pa.Table.from_batches([], schema=table.schema().as_arrow())
+    )
+    day = datetime.strptime(batch_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    job_cond = (StartsWith("batch_job", NORMAL_BATCH_JOB_PREFIX) if scope == "normal"
+                else EqualTo("batch_job", batch_job))
+    selector = And(EqualTo("batch_date", day), job_cond)
+    replaced = table.scan(row_filter=selector, selected_fields=("batch_job",)).to_arrow().num_rows
+    if replaced:
+        table.overwrite(arrow, overwrite_filter=selector)
+    elif arrow.num_rows:
+        table.append(arrow)
+    return replaced
+
+
 def write_to_iceberg(
     silver_df: pd.DataFrame,
     error_df: pd.DataFrame,
-) -> None:
+    batch_date: str,
+    batch_job: str,
+) -> int:
     """
-    silver / error DataFrame을 Iceberg 테이블에 기록합니다.
+    silver / error DataFrame을 Iceberg 테이블에 기록합니다. history에서 교체한 행 수를 돌려줍니다.
 
-    silver:
-        - current (overwrite): 항상 최신 배치 결과만 유지
-        - history (append):    배치 누적 이력 보관
+    순서: history → error → current(마지막).
+    CDC는 silver_current 최근 두 스냅샷으로 REMOVED/CHANGED를 본다. current를 먼저 쓰고 뒤에서
+    실패해 재실행하면 같은 내용 스냅샷이 하나 더 생겨 다음 CDC가 이번 배치 변화를 놓치므로,
+    current는 앞 단계가 다 성공한 뒤 한 번만 쓴다.
 
-    error:
-        - error/raw (overwrite): 최신 에러 결과 유지
+    - history (같은 batch_date 정상 행 교체): 재실행해도 한 벌
+    - error/raw (overwrite): 최신 배치 에러만. 0건이어도 비워서 이전 배치 에러가 남지 않게
+    - current (overwrite): 최신 배치 결과만
     """
     catalog = OliveyoungIceberg.get_catalog()
 
+    replaced = 0
     if not silver_df.empty:
-        # current — overwrite
+        replaced = replace_history(catalog, silver_df, batch_date, batch_job, scope="normal")
+        print(f"   Iceberg history 기록 완료: {OliveyoungIceberg.SILVER_HISTORY_TABLE} "
+              f"({len(silver_df)}건, 교체 {replaced}건)")
+    else:
+        print("   silver 데이터 없음 — history/current write 건너뜀")
+
+    error_table = _load_and_evolve_table(catalog, OliveyoungIceberg.SILVER_ERROR_TABLE)
+    error_arrow = (
+        _build_arrow_table_for_error(error_df, error_table)
+        if not error_df.empty else pa.Table.from_batches([], schema=error_table.schema().as_arrow())
+    )
+    error_table.overwrite(error_arrow)
+    print(f"   Iceberg overwrite 완료: {OliveyoungIceberg.SILVER_ERROR_TABLE} ({len(error_df)}건)")
+
+    if not silver_df.empty:
         current_table = _load_and_evolve_table(catalog, OliveyoungIceberg.SILVER_CURRENT_TABLE)
         current_arrow = _build_arrow_table_for_silver(silver_df, current_table)
         current_table.overwrite(current_arrow)
         print(f"   Iceberg overwrite 완료: {OliveyoungIceberg.SILVER_CURRENT_TABLE} ({len(silver_df)}건)")
 
-        # history — append
-        history_table = _load_and_evolve_table(catalog, OliveyoungIceberg.SILVER_HISTORY_TABLE)
-        history_arrow = _build_arrow_table_for_silver(silver_df, history_table)
-        history_table.append(history_arrow)
-        print(f"   Iceberg append 완료:    {OliveyoungIceberg.SILVER_HISTORY_TABLE} ({len(silver_df)}건)")
-    else:
-        print("   silver 데이터 없음 — Iceberg write 건너뜀")
-
-    if not error_df.empty:
-        error_table = _load_and_evolve_table(catalog, OliveyoungIceberg.SILVER_ERROR_TABLE)
-        error_arrow = _build_arrow_table_for_error(error_df, error_table)
-        error_table.overwrite(error_arrow)
-        print(f"   Iceberg overwrite 완료: {OliveyoungIceberg.SILVER_ERROR_TABLE} ({len(error_df)}건)")
-    else:
-        print("   error 데이터 없음 — Iceberg write 건너뜀")
+    return replaced
 
 
 # ==========================================
