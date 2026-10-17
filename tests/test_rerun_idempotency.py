@@ -63,8 +63,9 @@ class HistoryReplaceTest(LocalTableTest):
         self.table.append(_arrow([
             ("bronze_to_silver_20261001_010000", other_day, "old"),   # 다른 날짜
             ("backfill_20261003", DAY, "bf"),                         # 같은 날짜 백필
+            ("bronze_to_silver", DAY, "legacy"),                      # 2026-10 이전 형식(작업 이름만)
         ]))
-        self.assertEqual(self._replace(["a", "b"], "bronze_to_silver_20261004_010000", "normal"), 0)
+        self.assertEqual(self._replace(["a", "b"], "bronze_to_silver_20261004_010000", "normal"), 1)
         self.assertEqual(self._replace(["a", "b"], "bronze_to_silver_20261004_030000", "normal"), 2)
         self.assertEqual(self.rows(), [
             ("backfill_20261003", "bf"),
@@ -136,7 +137,7 @@ class PipelineOrderTest(unittest.TestCase):
              patch.object(pipeline, "load_bronze_data", return_value=(pd.DataFrame({"x": [1, 2]}), "20261003")), \
              patch.object(pipeline, "load_dictionaries"), \
              patch.object(pipeline, "_resolve_batch_date", return_value="2026-10-04"), \
-             patch.object(pipeline, "process_pipeline", return_value=(silver, error)), \
+             patch.object(pipeline, "process_pipeline", return_value=(silver, error)) as proc, \
              patch.object(pipeline.OliveyoungIceberg, "get_catalog"), \
              patch.object(pipeline, "write_to_iceberg", return_value=0) as w, \
              patch.object(pipeline, "_verify_silver") as v, \
@@ -150,8 +151,50 @@ class PipelineOrderTest(unittest.TestCase):
         # history 행과 DQ가 같은 실행 ID를 쓰고, DQ는 이전 실행을 교체
         run_id = w.call_args.args[3]
         self.assertTrue(run_id.startswith("bronze_to_silver_"))
+        # cleaner는 행에 batch.batch_job을 찍는다 → 그 값이 교체·검증에 쓰는 실행 ID와 같아야 한다
+        self.assertEqual(proc.call_args.kwargs["batch"].batch_job, run_id)
         self.assertTrue(all(c.kwargs["run_id"] == run_id and c.kwargs["replace"] == "other_runs"
                             for c in dq.call_args_list))
+
+
+class StampedRowsContractTest(LocalTableTest):
+    """cleaner와 같은 방식(add_batch_metadata)으로 찍힌 batch_job으로 교체·검증이 맞물리는지.
+
+    2026-10-17 버그 회귀 방지: 행에는 작업 이름만 찍히고 검증은 실행 ID로 세서 항상 0건이었다.
+    """
+
+    def test_verify_counts_rows_stamped_like_cleaner(self):
+        from models.batch_metadata import add_batch_metadata
+        with patch.dict(os.environ, {"BATCH_DATE": "2026-10-04"}), \
+             patch.object(pipeline, "check_batch_date_required"), \
+             patch.object(pipeline.DuckDB, "get_connection"), \
+             patch.object(pipeline, "load_bronze_data", return_value=(pd.DataFrame({"x": [1]}), "20261003")), \
+             patch.object(pipeline, "load_dictionaries"), \
+             patch.object(pipeline, "_resolve_batch_date", return_value="2026-10-04"), \
+             patch.object(pipeline, "process_pipeline",
+                          return_value=(pd.DataFrame({"product_id": ["a"]}), pd.DataFrame())) as proc, \
+             patch.object(pipeline, "write_to_iceberg", return_value=0), \
+             patch.object(pipeline, "_verify_silver"), \
+             patch.object(pipeline.OliveyoungIceberg, "get_catalog"), \
+             patch.object(pipeline, "write_dq_metrics"), patch.object(pipeline, "write_csv_to_s3"):
+            pipeline.run_pipeline()
+        batch = proc.call_args.kwargs["batch"]          # 파이프라인이 cleaner에 넘긴 실제 batch
+        df = pd.DataFrame({"product_id": ["a", "b"]})
+        add_batch_metadata(df, batch, "2026-10-04")     # cleaner가 행에 찍는 방식 그대로
+        stamped = _arrow([(j, DAY, p) for j, p in zip(df["batch_job"], df["product_id"])])
+        self.table.append(stamped)
+        cur = self.catalog.create_table("t.cur", schema=SCHEMA)
+        cur.append(stamped)
+        names = {pipeline.OliveyoungIceberg.SILVER_HISTORY_TABLE: "t.x",
+                 pipeline.OliveyoungIceberg.SILVER_CURRENT_TABLE: "t.cur"}
+        fake = MagicMock()
+        fake.load_table.side_effect = lambda n: self.catalog.load_table(names[n])
+        with patch.object(pipeline.OliveyoungIceberg, "get_catalog", return_value=fake):
+            pipeline._verify_silver("2026-10-04", batch.batch_job, 2)   # 찍힌 값으로 정확히 2건
+            with self.assertRaises(RuntimeError):
+                pipeline._verify_silver("2026-10-04", batch.batch_job, 3)
+        # 찍힌 값이 정상 교체 범위(실행 ID 접두어)에 들어가야 재실행 때 교체된다
+        self.assertTrue(batch.batch_job.startswith(write_silver.NORMAL_BATCH_JOB_PREFIX))
 
 
 class BatchDateRequiredTest(unittest.TestCase):

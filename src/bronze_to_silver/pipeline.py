@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from pyiceberg.expressions import And, EqualTo
 
 from config.settings import OliveyoungIceberg, INCIIceberg, DuckDB
-from models.batch_metadata import check_batch_date_required, create_batch_metadata
+from models.batch_metadata import BatchMetadata, check_batch_date_required, create_batch_metadata
 from models.pipeline_models import Dictionaries
 from src.bronze_to_silver.ac_builder import (
     generate_kcia_mapping_dict,
@@ -107,8 +107,6 @@ def load_dictionaries() -> Dictionaries:
 
 def _verify_silver(batch_date: str, batch_job: str, silver_count: int) -> None:
     """쓰기 후 재조회 — history의 이번 실행 행 수와 current 행 수가 정제 결과와 같아야 한다."""
-    if silver_count == 0:
-        return  # 0건이면 history/current를 쓰지 않으므로 비교 대상 없음
     catalog = OliveyoungIceberg.get_catalog()
     day = datetime.strptime(batch_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
     history = catalog.load_table(OliveyoungIceberg.SILVER_HISTORY_TABLE)
@@ -130,6 +128,9 @@ def run_pipeline():
 
     재실행 멱등: 같은 batch_date의 이전 정상 실행 결과(history·DQ)를 교체한다.
     쓰기 순서는 Silver(history → error → current) → 재조회 검증 → DQ·리포트 → CSV.
+    current 이후에 실패할 수 있는 지점은 검증뿐이다(DQ·CSV는 비치명). current를 쓴 뒤
+    실패해 재실행하면 같은 내용 current 스냅샷이 하나 더 생겨 CDC의 최근 두 스냅샷 비교가
+    이번 배치 변화를 놓칠 수 있다 — 남는 위험(근본 해결은 CDC의 배치 경계 스냅샷 선택).
     """
     print("=== Bronze → Silver 전처리 시작 ===\n")
     check_batch_date_required()
@@ -141,9 +142,12 @@ def run_pipeline():
     dicts  = load_dictionaries()
 
     batch_date = _resolve_batch_date(max_run_id)
-    # 이 실행의 식별자 하나를 history 행(batch_job)과 DQ(run_id)에 같이 쓴다
-    batch = create_batch_metadata("bronze_to_silver")
-    batch_job = batch.run_id
+    # 이 실행의 식별자 하나를 history 행(batch_job)과 DQ(run_id)에 같이 쓴다.
+    # cleaner는 행에 batch.batch_job을 찍으므로 batch_job 자리에 실행 ID를 넣는다(silver_to_gold와 같은 방식).
+    # create_batch_metadata("bronze_to_silver")를 그대로 넘기면 행에는 작업 이름만 찍혀 실행을 구분할 수 없다.
+    base = create_batch_metadata("bronze_to_silver")
+    batch_job = base.run_id
+    batch = BatchMetadata(batch_job=batch_job, batch_date=base.batch_date)
 
     print("9. 전처리 파이프라인 실행...")
     silver_df, error_df = process_pipeline(
@@ -157,6 +161,12 @@ def run_pipeline():
         batch_date             = batch_date,
     )
     print(f"   정상: {len(silver_df)}건 / 에러: {len(error_df)}건\n")
+
+    # 정제 결과 0건은 정상 결과가 아니라 장애 신호(사전 손상 등). 아무것도 쓰기 전에 멈춰
+    # 이전 history/current를 그대로 두고 DAG 실패로 알린다 — 0건을 쓰면 재실행이 한 벌로
+    # 수렴하지 않고, current가 이전 날짜 그대로인 채 silver_to_gold가 진행된다.
+    if silver_df.empty:
+        raise RuntimeError(f"정제 결과 0건(에러 {len(error_df)}건, bronze {len(raw_df)}건) — 쓰기 전에 중단")
 
     print("10. Iceberg write...")
     replaced = write_to_iceberg(silver_df, error_df, batch_date, batch_job)
@@ -178,6 +188,7 @@ def run_pipeline():
     log_dq(logger, stage="bronze_to_silver", batch_job=batch_job, **metrics)
     # 테이블 적재 실패가 파이프라인을 깨지 않도록 비치명적 처리
     # silver 행·dq_metrics 모두 같은 batch_date로 찍혀 배치-정밀 드릴다운 가능
+    summary_ok = False
     try:
         write_dq_metrics(
             OliveyoungIceberg.get_catalog(),
@@ -189,13 +200,16 @@ def run_pipeline():
             replace="other_runs",   # 같은 batch_date 이전 실행 기록 교체(재실행이면 리포트에 표시)
             **metrics,
         )
+        summary_ok = True
     except Exception as e:
         logger.warning(f"dq_metrics 적재 실패(무시): {e}")
 
     # 정합성 메트릭(2) — error_type별 레코드 수. 저장만(Discord 리포트 미발송, 비치명).
     # UNMAPPED_RESIDUAL은 매칭 유무와 무관히 잔여 성분이 있으면 남음(Silver 적재 여부 섞임) →
     # '상품 수'가 아닌 '레코드 수'로 집계. run 식별은 위 silver_error가 마커.
-    if not error_df.empty and "error_type" in error_df.columns:
+    # 요약이 실패했으면 쓰지 않는다 — 유형별만 쓰면 교체가 이전 실행의 완전한 기록을 지우고
+    # err_*만 남긴다. 요약만 남는 경우는 dq_api가 '유형별 자료 없음'으로 표시한다.
+    if summary_ok and not error_df.empty and "error_type" in error_df.columns:
         # 집계·기록 전체를 try 안에 두어 'DQ 계측은 비치명' 계약을 끝까지 지킴.
         # error_type null/누락은 value_counts가 기본 제외 → fillna로 UNCLASSIFIED에 담아
         # 불변식 sum(err_counts) == len(error_df) 보장(dq_api '집계 불완전' 판정의 근거).
@@ -217,8 +231,12 @@ def run_pipeline():
         except Exception as e:
             logger.warning(f"error_type dq_metrics 적재 실패(무시): {e}")
 
-    # CSV는 실행 시각 파일명이라 재실행마다 새 파일 — 원본 데이터가 아니므로 멱등 대상 아님
+    # CSV는 실행 시각 파일명이라 재실행마다 새 파일 — 원본 데이터가 아니므로 멱등 대상 아님.
+    # 비치명: CSV 실패로 태스크가 실패하면 재실행이 current를 다시 써 CDC 입력을 흐트러뜨린다.
     print("\n11. CSV 저장 (s3 data_csv/)...")
-    write_csv_to_s3(silver_df, error_df)
+    try:
+        write_csv_to_s3(silver_df, error_df)
+    except Exception as e:
+        logger.warning(f"CSV 저장 실패(무시): {e}")
 
     print("\n=== 완료 ===")

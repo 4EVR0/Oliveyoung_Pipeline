@@ -12,15 +12,17 @@ from typing import Any
 import boto3
 import pandas as pd
 import pyarrow as pa
-from pyiceberg.expressions import And, EqualTo, StartsWith
+from pyiceberg.expressions import And, EqualTo, Or, StartsWith
 from pyiceberg.types import StringType, TimestamptzType
 
 from config.settings import S3, OliveyoungIceberg
 from oliveyoung_common.batch import build_run_id
 
-# 정상 실행 history 행의 batch_job 접두어(create_batch_metadata("bronze_to_silver").run_id).
-# 백필 행은 backfill_<source_run_id>라 이 접두어로 정상 교체 범위에서 빠진다.
-NORMAL_BATCH_JOB_PREFIX = "bronze_to_silver_"
+# 정상 실행 history 행의 batch_job: 실행 ID "bronze_to_silver_YYYYMMDD_HHMMSS".
+# 2026-10 이전 행은 작업 이름 "bronze_to_silver" 그대로라 둘 다 정상 실행으로 본다.
+# 백필 행은 backfill_<source_run_id>라 정상 교체 범위에서 빠진다.
+NORMAL_BATCH_JOB = "bronze_to_silver"
+NORMAL_BATCH_JOB_PREFIX = NORMAL_BATCH_JOB + "_"
 
 
 # ==========================================
@@ -256,7 +258,7 @@ def replace_history(catalog, silver_df: pd.DataFrame, batch_date: str,
                     batch_job: str, scope: str) -> int:
     """silver_history에서 같은 batch_date의 기존 행을 교체한다(재실행 멱등). 지운 행 수를 돌려준다.
 
-    scope="normal"  : 같은 날짜의 정상 실행 행(batch_job 접두어) — 백필 행은 보존
+    scope="normal"  : 같은 날짜의 정상 실행 행(실행 ID 접두어 또는 이전 형식 "bronze_to_silver") — 백필 행은 보존
     scope="backfill": 같은 날짜·같은 백필 키(batch_job) 행
     지울 행이 없으면 append(빈 delete 스냅샷·경고 방지). CDC NEW는 history 최근 두 스냅샷을
     비교하는데, 재실행 때 삭제 스냅샷이 '이 배치를 지운 상태'라 첫 실행과 같은 결과가 나온다.
@@ -269,8 +271,8 @@ def replace_history(catalog, silver_df: pd.DataFrame, batch_date: str,
         if not silver_df.empty else pa.Table.from_batches([], schema=table.schema().as_arrow())
     )
     day = datetime.strptime(batch_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
-    job_cond = (StartsWith("batch_job", NORMAL_BATCH_JOB_PREFIX) if scope == "normal"
-                else EqualTo("batch_job", batch_job))
+    job_cond = (Or(StartsWith("batch_job", NORMAL_BATCH_JOB_PREFIX), EqualTo("batch_job", NORMAL_BATCH_JOB))
+                if scope == "normal" else EqualTo("batch_job", batch_job))
     selector = And(EqualTo("batch_date", day), job_cond)
     replaced = table.scan(row_filter=selector, selected_fields=("batch_job",)).to_arrow().num_rows
     if replaced:
