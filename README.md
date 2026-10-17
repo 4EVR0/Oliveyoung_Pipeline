@@ -192,6 +192,10 @@ Airflow UI에서 `source_run_id`를 넣고 `dry-run`을 먼저 실행해 manifes
 
 - **current / history 분리** — 최신 조회용(`current`, overwrite)과 시계열 추적용(`history`, 배치 누적)을 나눠 재읽기 없이 변화를 본다.
 - **재실행 멱등** — 실패한 태스크를 Clear·재실행하거나 같은 `batch_date`를 다시 돌려도 결과가 한 벌이다. history·frequency·change_log·`dq_metrics`는 같은 `batch_date`의 이전 실행 행을 조건부 overwrite로 교체하고(백필 행은 보존), bronze→silver는 history → error → current 순서로 쓴 뒤 재조회 검증하고 DQ·리포트를 남긴다. current를 마지막에 쓰는 이유는 CDC가 current 최근 두 스냅샷을 비교하기 때문. Airflow 실행은 `BATCH_DATE`가 비면 중단한다(교체 키 보호). 재실행이면 완료 리포트 제목에 `(재실행)`이 붙는다. 단, `neo4j_incremental`까지 성공한 배치의 silver_to_gold는 다시 돌리지 않는다(그래프 재반영).
+  - history 행의 `batch_job`은 실행 ID(`bronze_to_silver_YYYYMMDD_HHMMSS`)이고 DQ `run_id`와 같다(2026-10 이전 행은 `bronze_to_silver`, 교체 범위에 포함).
+  - 정제 결과 0건은 장애로 보고 **쓰기 전에 중단**한다. DQ 요약 기록이 실패하면 유형별(`err_*`)은 쓰지 않는다. CSV 저장은 비치명.
+  - 백필 apply는 `oliveyoung_pipeline`이 실행·대기 중이면 거부한다(정상 b2s와 s2g 사이에 백필 스냅샷이 끼면 CDC NEW가 오염).
+  - 남는 위험: current를 쓴 뒤 검증이 실패해 재실행하면 같은 내용 current 스냅샷이 하나 더 생겨 CDC 최근 두 스냅샷 비교가 그 배치 변화를 놓칠 수 있다. 백필 중 크롤이 정상 실행을 트리거하는 반대 방향도 막지 않는다(백필은 수 분). 근본 해결은 CDC가 배치 경계 스냅샷을 고르는 것.
 - **CDC = Iceberg 스냅샷 비교** — 전체 스캔 없이 최신 2개 스냅샷의 `product_id` 집합·추적 필드 차이로 변경분을 뽑는다.
 - **Neo4j 증분 + checkpoint** — `neo4j_sync_checkpoint` 에 마지막 처리 배치를 남겨 change_log 의 신규분만 그래프에 반영한다.
 - **Aho-Corasick 매칭** — 수천 개 표준명을 한 번의 스캔으로 동시 탐색. 성분명 내부 쉼표는 마스킹으로 분리.
