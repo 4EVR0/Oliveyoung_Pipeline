@@ -1,0 +1,1938 @@
+{
+  "started_at": "2026-11-03T04:42:30.951894+00:00",
+  "workgroup": "oliveyoung-ops",
+  "table": "oliveyoung_db.oliveyoung_silver_history",
+  "runs": 3,
+  "executions": [
+    {
+      "label": "layout_before",
+      "query_id": "755e00d0-de5c-4834-bad3-a2ecfcee9f40",
+      "sql": "SELECT count(*) AS files,\n            sum(file_size_in_bytes) AS bytes, sum(record_count) AS records\n            FROM \"oliveyoung_db\".\"oliveyoung_silver_history$files\" WHERE content = 0",
+      "execution": {
+        "QueryExecutionId": "755e00d0-de5c-4834-bad3-a2ecfcee9f40",
+        "Query": "SELECT count(*) AS files,\n            sum(file_size_in_bytes) AS bytes, sum(record_count) AS records\n            FROM \"oliveyoung_db\".\"oliveyoung_silver_history$files\" WHERE content = 0",
+        "StatementType": "DML",
+        "ResultConfiguration": {
+          "OutputLocation": "s3://oliveyoung-crawl-data/athena-results/755e00d0-de5c-4834-bad3-a2ecfcee9f40.csv"
+        },
+        "ResultReuseConfiguration": {
+          "ResultReuseByAgeConfiguration": {
+            "Enabled": false
+          }
+        },
+        "QueryExecutionContext": {
+          "Database": "oliveyoung_db",
+          "Catalog": "awsdatacatalog"
+        },
+        "Status": {
+          "State": "SUCCEEDED",
+          "SubmissionDateTime": "2026-11-03 04:46:32.767000+00:00",
+          "CompletionDateTime": "2026-11-03 04:46:35.094000+00:00"
+        },
+        "Statistics": {
+          "EngineExecutionTimeInMillis": 2010,
+          "DataScannedInBytes": 4386012,
+          "TotalExecutionTimeInMillis": 2327,
+          "QueryQueueTimeInMillis": 61,
+          "ServicePreProcessingTimeInMillis": 193,
+          "QueryPlanningTimeInMillis": 32,
+          "ServiceProcessingTimeInMillis": 63,
+          "ResultReuseInformation": {
+            "ReusedPreviousResult": false
+          }
+        },
+        "WorkGroup": "oliveyoung-ops",
+        "EngineVersion": {
+          "SelectedEngineVersion": "Athena engine version 3",
+          "EffectiveEngineVersion": "Athena engine version 3"
+        },
+        "SubstatementType": "SELECT"
+      },
+      "client_wall_seconds": 3.3763266587629914,
+      "result_sha256": "e6c8565c2272d7c306ef96053eb7bc83d3444e6ff42edeea1cc5d699de8284b0",
+      "runtime_statistics": {
+        "Timeline": {
+          "QueryQueueTimeInMillis": 61,
+          "ServicePreProcessingTimeInMillis": 193,
+          "QueryPlanningTimeInMillis": 32,
+          "EngineExecutionTimeInMillis": 2010,
+          "ServiceProcessingTimeInMillis": 63,
+          "TotalExecutionTimeInMillis": 2327
+        },
+        "Rows": {
+          "InputRows": 1722,
+          "InputBytes": 4386012,
+          "OutputBytes": 27,
+          "OutputRows": 1
+        },
+        "OutputStage": {
+          "StageId": 0,
+          "State": "FINISHED",
+          "OutputBytes": 27,
+          "OutputRows": 1,
+          "InputBytes": 47,
+          "InputRows": 1,
+          "ExecutionTime": 3644,
+          "QueryStagePlan": {
+            "Name": "Output",
+            "Identifier": "{\"columnNames\":\"[files, bytes, records]\"}",
+            "Children": [
+              {
+                "Name": "Aggregate",
+                "Identifier": "{\"type\":\"FINAL\",\"keys\":\"\",\"hash\":\"[]\"}",
+                "Children": [
+                  {
+                    "Name": "LocalExchange",
+                    "Identifier": "{\"partitioning\":\"SINGLE\",\"isReplicateNullsAndAny\":\"\",\"hashColumn\":\"[]\",\"arguments\":\"[]\"}",
+                    "Children": [
+                      {
+                        "Name": "RemoteSource",
+                        "Identifier": "{\"sourceFragmentIds\":\"[1]\"}",
+                        "Children": [],
+                        "RemoteSources": [
+                          "1"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "SubStages": [
+            {
+              "StageId": 1,
+              "State": "FINISHED",
+              "OutputBytes": 47,
+              "OutputRows": 1,
+              "InputBytes": 4386012,
+              "InputRows": 1722,
+              "ExecutionTime": 1106,
+              "QueryStagePlan": {
+                "Name": "Aggregate",
+                "Identifier": "{\"type\":\"PARTIAL\",\"keys\":\"\",\"hash\":\"[]\"}",
+                "Children": [
+                  {
+                    "Name": "ScanFilterProject",
+                    "Identifier": "{\"table\":\"awsdatacatalog$iceberg-aws:oliveyoung_db.oliveyoung_silver_history$files\",\"filterPredicate\":\"(\\\"content\\\" = 0)\",\"projectLocality\":\"LOCAL\",\"protectedBarrier\":\"NONE\"}",
+                    "Children": []
+                  }
+                ]
+              },
+              "SubStages": []
+            }
+          ]
+        }
+      },
+      "api_calls": {
+        "start_query_execution": 1,
+        "get_query_execution": 4,
+        "get_query_results": 1,
+        "get_query_runtime_statistics": 1
+      }
+    },
+    {
+      "label": "warmup_before",
+      "query_id": "a0c086a1-33cb-4743-a18d-9b05196568c4",
+      "sql": "SELECT category, count(*) AS rows,\n            sum(length(product_id)) AS product_id_chars,\n            sum(length(product_name)) AS product_name_chars,\n            sum(cardinality(product_ingredients)) AS ingredients,\n            sum(review_count) AS reviews, min(batch_date) AS first_batch,\n            max(batch_date) AS last_batch\n            FROM \"oliveyoung_db\".\"oliveyoung_silver_history\"\n            GROUP BY category ORDER BY category NULLS FIRST",
+      "execution": {
+        "QueryExecutionId": "a0c086a1-33cb-4743-a18d-9b05196568c4",
+        "Query": "SELECT category, count(*) AS rows,\n            sum(length(product_id)) AS product_id_chars,\n            sum(length(product_name)) AS product_name_chars,\n            sum(cardinality(product_ingredients)) AS ingredients,\n            sum(review_count) AS reviews, min(batch_date) AS first_batch,\n            max(batch_date) AS last_batch\n            FROM \"oliveyoung_db\".\"oliveyoung_silver_history\"\n            GROUP BY category ORDER BY category NULLS FIRST",
+        "StatementType": "DML",
+        "ResultConfiguration": {
+          "OutputLocation": "s3://oliveyoung-crawl-data/athena-results/a0c086a1-33cb-4743-a18d-9b05196568c4.csv"
+        },
+        "ResultReuseConfiguration": {
+          "ResultReuseByAgeConfiguration": {
+            "Enabled": false
+          }
+        },
+        "QueryExecutionContext": {
+          "Database": "oliveyoung_db",
+          "Catalog": "awsdatacatalog"
+        },
+        "Status": {
+          "State": "SUCCEEDED",
+          "SubmissionDateTime": "2026-11-03 04:46:36.166000+00:00",
+          "CompletionDateTime": "2026-11-03 04:46:38.012000+00:00"
+        },
+        "Statistics": {
+          "EngineExecutionTimeInMillis": 1706,
+          "DataScannedInBytes": 47104552,
+          "TotalExecutionTimeInMillis": 1846,
+          "QueryQueueTimeInMillis": 59,
+          "ServicePreProcessingTimeInMillis": 47,
+          "QueryPlanningTimeInMillis": 384,
+          "ServiceProcessingTimeInMillis": 34,
+          "ResultReuseInformation": {
+            "ReusedPreviousResult": false
+          }
+        },
+        "WorkGroup": "oliveyoung-ops",
+        "EngineVersion": {
+          "SelectedEngineVersion": "Athena engine version 3",
+          "EffectiveEngineVersion": "Athena engine version 3"
+        },
+        "SubstatementType": "SELECT"
+      },
+      "client_wall_seconds": 2.1479443479329348,
+      "result_sha256": "9b93246966d2e21a0f56c1516929461807b92ad55cfdc13f194d1038b1d2a54e",
+      "runtime_statistics": {
+        "Timeline": {
+          "QueryQueueTimeInMillis": 59,
+          "ServicePreProcessingTimeInMillis": 47,
+          "QueryPlanningTimeInMillis": 384,
+          "EngineExecutionTimeInMillis": 1706,
+          "ServiceProcessingTimeInMillis": 34,
+          "TotalExecutionTimeInMillis": 1846
+        },
+        "Rows": {
+          "InputRows": 302939,
+          "InputBytes": 170051646,
+          "OutputBytes": 1632,
+          "OutputRows": 19
+        },
+        "OutputStage": {
+          "StageId": 0,
+          "State": "FINISHED",
+          "OutputBytes": 1632,
+          "OutputRows": 19,
+          "InputBytes": 1632,
+          "InputRows": 19,
+          "ExecutionTime": 720,
+          "QueryStagePlan": {
+            "Name": "Output",
+            "Identifier": "{\"columnNames\":\"[category, rows, product_id_chars, product_name_chars, ingredients, reviews, first_batch, last_batch]\"}",
+            "Children": [
+              {
+                "Name": "RemoteMerge",
+                "Identifier": "{\"sourceFragmentIds\":\"[1]\"}",
+                "Children": [],
+                "RemoteSources": [
+                  "1"
+                ]
+              }
+            ]
+          },
+          "SubStages": [
+            {
+              "StageId": 1,
+              "State": "FINISHED",
+              "OutputBytes": 1632,
+              "OutputRows": 19,
+              "InputBytes": 1632,
+              "InputRows": 19,
+              "ExecutionTime": 14529,
+              "QueryStagePlan": {
+                "Name": "LocalMerge",
+                "Identifier": "{\"orderBy\":\"[category ASC NULLS FIRST]\"}",
+                "Children": [
+                  {
+                    "Name": "PartialSort",
+                    "Identifier": "{\"orderBy\":\"[category ASC NULLS FIRST]\"}",
+                    "Children": [
+                      {
+                        "Name": "RemoteSource",
+                        "Identifier": "{\"sourceFragmentIds\":\"[2]\"}",
+                        "Children": [],
+                        "RemoteSources": [
+                          "2"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "SubStages": [
+                {
+                  "StageId": 2,
+                  "State": "FINISHED",
+                  "OutputBytes": 1632,
+                  "OutputRows": 19,
+                  "InputBytes": 217439,
+                  "InputRows": 1722,
+                  "ExecutionTime": 22476,
+                  "QueryStagePlan": {
+                    "Name": "Aggregate",
+                    "Identifier": "{\"type\":\"FINAL\",\"keys\":\"[category]\",\"hash\":\"[]\"}",
+                    "Children": [
+                      {
+                        "Name": "LocalExchange",
+                        "Identifier": "{\"partitioning\":\"HASH\",\"isReplicateNullsAndAny\":\"\",\"hashColumn\":\"[]\",\"arguments\":\"[\\\"category\\\"]\"}",
+                        "Children": [
+                          {
+                            "Name": "RemoteSource",
+                            "Identifier": "{\"sourceFragmentIds\":\"[3]\"}",
+                            "Children": [],
+                            "RemoteSources": [
+                              "3"
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "SubStages": [
+                    {
+                      "StageId": 3,
+                      "State": "FINISHED",
+                      "OutputBytes": 244991,
+                      "OutputRows": 1722,
+                      "InputBytes": 170051646,
+                      "InputRows": 302939,
+                      "ExecutionTime": 119940,
+                      "QueryStagePlan": {
+                        "Name": "Aggregate",
+                        "Identifier": "{\"type\":\"PARTIAL\",\"keys\":\"[category]\",\"hash\":\"[]\"}",
+                        "Children": [
+                          {
+                            "Name": "ScanProject",
+                            "Identifier": "{\"table\":\"awsdatacatalog$iceberg-aws:oliveyoung_db.oliveyoung_silver_history$data@5281192804406411760\",\"projectLocality\":\"LOCAL\",\"protectedBarrier\":\"NONE\"}",
+                            "Children": []
+                          }
+                        ]
+                      },
+                      "SubStages": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "api_calls": {
+        "start_query_execution": 1,
+        "get_query_execution": 3,
+        "get_query_results": 1,
+        "get_query_runtime_statistics": 1
+      }
+    },
+    {
+      "label": "before_1",
+      "query_id": "7e708268-1686-47cd-b71b-5eac572dd364",
+      "sql": "SELECT category, count(*) AS rows,\n            sum(length(product_id)) AS product_id_chars,\n            sum(length(product_name)) AS product_name_chars,\n            sum(cardinality(product_ingredients)) AS ingredients,\n            sum(review_count) AS reviews, min(batch_date) AS first_batch,\n            max(batch_date) AS last_batch\n            FROM \"oliveyoung_db\".\"oliveyoung_silver_history\"\n            GROUP BY category ORDER BY category NULLS FIRST",
+      "execution": {
+        "QueryExecutionId": "7e708268-1686-47cd-b71b-5eac572dd364",
+        "Query": "SELECT category, count(*) AS rows,\n            sum(length(product_id)) AS product_id_chars,\n            sum(length(product_name)) AS product_name_chars,\n            sum(cardinality(product_ingredients)) AS ingredients,\n            sum(review_count) AS reviews, min(batch_date) AS first_batch,\n            max(batch_date) AS last_batch\n            FROM \"oliveyoung_db\".\"oliveyoung_silver_history\"\n            GROUP BY category ORDER BY category NULLS FIRST",
+        "StatementType": "DML",
+        "ResultConfiguration": {
+          "OutputLocation": "s3://oliveyoung-crawl-data/athena-results/7e708268-1686-47cd-b71b-5eac572dd364.csv"
+        },
+        "ResultReuseConfiguration": {
+          "ResultReuseByAgeConfiguration": {
+            "Enabled": false
+          }
+        },
+        "QueryExecutionContext": {
+          "Database": "oliveyoung_db",
+          "Catalog": "awsdatacatalog"
+        },
+        "Status": {
+          "State": "SUCCEEDED",
+          "SubmissionDateTime": "2026-11-03 04:47:02.064000+00:00",
+          "CompletionDateTime": "2026-11-03 04:47:03.568000+00:00"
+        },
+        "Statistics": {
+          "EngineExecutionTimeInMillis": 1339,
+          "DataScannedInBytes": 47104552,
+          "TotalExecutionTimeInMillis": 1504,
+          "QueryQueueTimeInMillis": 99,
+          "ServicePreProcessingTimeInMillis": 43,
+          "QueryPlanningTimeInMillis": 323,
+          "ServiceProcessingTimeInMillis": 23,
+          "ResultReuseInformation": {
+            "ReusedPreviousResult": false
+          }
+        },
+        "WorkGroup": "oliveyoung-ops",
+        "EngineVersion": {
+          "SelectedEngineVersion": "Athena engine version 3",
+          "EffectiveEngineVersion": "Athena engine version 3"
+        },
+        "SubstatementType": "SELECT"
+      },
+      "client_wall_seconds": 2.159525105729699,
+      "result_sha256": "9b93246966d2e21a0f56c1516929461807b92ad55cfdc13f194d1038b1d2a54e",
+      "runtime_statistics": {
+        "Timeline": {
+          "QueryQueueTimeInMillis": 99,
+          "ServicePreProcessingTimeInMillis": 43,
+          "QueryPlanningTimeInMillis": 323,
+          "EngineExecutionTimeInMillis": 1339,
+          "ServiceProcessingTimeInMillis": 23,
+          "TotalExecutionTimeInMillis": 1504
+        },
+        "Rows": {
+          "InputRows": 302939,
+          "InputBytes": 170051646,
+          "OutputBytes": 1632,
+          "OutputRows": 19
+        },
+        "OutputStage": {
+          "StageId": 0,
+          "State": "FINISHED",
+          "OutputBytes": 1632,
+          "OutputRows": 19,
+          "InputBytes": 1632,
+          "InputRows": 19,
+          "ExecutionTime": 503,
+          "QueryStagePlan": {
+            "Name": "Output",
+            "Identifier": "{\"columnNames\":\"[category, rows, product_id_chars, product_name_chars, ingredients, reviews, first_batch, last_batch]\"}",
+            "Children": [
+              {
+                "Name": "RemoteMerge",
+                "Identifier": "{\"sourceFragmentIds\":\"[1]\"}",
+                "Children": [],
+                "RemoteSources": [
+                  "1"
+                ]
+              }
+            ]
+          },
+          "SubStages": [
+            {
+              "StageId": 1,
+              "State": "FINISHED",
+              "OutputBytes": 1632,
+              "OutputRows": 19,
+              "InputBytes": 1632,
+              "InputRows": 19,
+              "ExecutionTime": 10136,
+              "QueryStagePlan": {
+                "Name": "LocalMerge",
+                "Identifier": "{\"orderBy\":\"[category ASC NULLS FIRST]\"}",
+                "Children": [
+                  {
+                    "Name": "PartialSort",
+                    "Identifier": "{\"orderBy\":\"[category ASC NULLS FIRST]\"}",
+                    "Children": [
+                      {
+                        "Name": "RemoteSource",
+                        "Identifier": "{\"sourceFragmentIds\":\"[2]\"}",
+                        "Children": [],
+                        "RemoteSources": [
+                          "2"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "SubStages": [
+                {
+                  "StageId": 2,
+                  "State": "FINISHED",
+                  "OutputBytes": 1632,
+                  "OutputRows": 19,
+                  "InputBytes": 217439,
+                  "InputRows": 1722,
+                  "ExecutionTime": 15666,
+                  "QueryStagePlan": {
+                    "Name": "Aggregate",
+                    "Identifier": "{\"type\":\"FINAL\",\"keys\":\"[category]\",\"hash\":\"[]\"}",
+                    "Children": [
+                      {
+                        "Name": "LocalExchange",
+                        "Identifier": "{\"partitioning\":\"HASH\",\"isReplicateNullsAndAny\":\"\",\"hashColumn\":\"[]\",\"arguments\":\"[\\\"category\\\"]\"}",
+                        "Children": [
+                          {
+                            "Name": "RemoteSource",
+                            "Identifier": "{\"sourceFragmentIds\":\"[3]\"}",
+                            "Children": [],
+                            "RemoteSources": [
+                              "3"
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "SubStages": [
+                    {
+                      "StageId": 3,
+                      "State": "FINISHED",
+                      "OutputBytes": 244991,
+                      "OutputRows": 1722,
+                      "InputBytes": 170051646,
+                      "InputRows": 302939,
+                      "ExecutionTime": 71270,
+                      "QueryStagePlan": {
+                        "Name": "Aggregate",
+                        "Identifier": "{\"type\":\"PARTIAL\",\"keys\":\"[category]\",\"hash\":\"[]\"}",
+                        "Children": [
+                          {
+                            "Name": "ScanProject",
+                            "Identifier": "{\"table\":\"awsdatacatalog$iceberg-aws:oliveyoung_db.oliveyoung_silver_history$data@5281192804406411760\",\"projectLocality\":\"LOCAL\",\"protectedBarrier\":\"NONE\"}",
+                            "Children": []
+                          }
+                        ]
+                      },
+                      "SubStages": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "api_calls": {
+        "start_query_execution": 1,
+        "get_query_execution": 3,
+        "get_query_results": 1,
+        "get_query_runtime_statistics": 1
+      }
+    },
+    {
+      "label": "before_2",
+      "query_id": "e1b67ec6-858b-4a35-a5a6-6407519713f4",
+      "sql": "SELECT category, count(*) AS rows,\n            sum(length(product_id)) AS product_id_chars,\n            sum(length(product_name)) AS product_name_chars,\n            sum(cardinality(product_ingredients)) AS ingredients,\n            sum(review_count) AS reviews, min(batch_date) AS first_batch,\n            max(batch_date) AS last_batch\n            FROM \"oliveyoung_db\".\"oliveyoung_silver_history\"\n            GROUP BY category ORDER BY category NULLS FIRST",
+      "execution": {
+        "QueryExecutionId": "e1b67ec6-858b-4a35-a5a6-6407519713f4",
+        "Query": "SELECT category, count(*) AS rows,\n            sum(length(product_id)) AS product_id_chars,\n            sum(length(product_name)) AS product_name_chars,\n            sum(cardinality(product_ingredients)) AS ingredients,\n            sum(review_count) AS reviews, min(batch_date) AS first_batch,\n            max(batch_date) AS last_batch\n            FROM \"oliveyoung_db\".\"oliveyoung_silver_history\"\n            GROUP BY category ORDER BY category NULLS FIRST",
+        "StatementType": "DML",
+        "ResultConfiguration": {
+          "OutputLocation": "s3://oliveyoung-crawl-data/athena-results/e1b67ec6-858b-4a35-a5a6-6407519713f4.csv"
+        },
+        "ResultReuseConfiguration": {
+          "ResultReuseByAgeConfiguration": {
+            "Enabled": false
+          }
+        },
+        "QueryExecutionContext": {
+          "Database": "oliveyoung_db",
+          "Catalog": "awsdatacatalog"
+        },
+        "Status": {
+          "State": "SUCCEEDED",
+          "SubmissionDateTime": "2026-11-03 04:47:04.443000+00:00",
+          "CompletionDateTime": "2026-11-03 04:47:07.901000+00:00"
+        },
+        "Statistics": {
+          "EngineExecutionTimeInMillis": 3261,
+          "DataScannedInBytes": 47104552,
+          "TotalExecutionTimeInMillis": 3458,
+          "QueryQueueTimeInMillis": 97,
+          "ServicePreProcessingTimeInMillis": 56,
+          "QueryPlanningTimeInMillis": 649,
+          "ServiceProcessingTimeInMillis": 44,
+          "ResultReuseInformation": {
+            "ReusedPreviousResult": false
+          }
+        },
+        "WorkGroup": "oliveyoung-ops",
+        "EngineVersion": {
+          "SelectedEngineVersion": "Athena engine version 3",
+          "EffectiveEngineVersion": "Athena engine version 3"
+        },
+        "SubstatementType": "SELECT"
+      },
+      "client_wall_seconds": 4.192572166677564,
+      "result_sha256": "9b93246966d2e21a0f56c1516929461807b92ad55cfdc13f194d1038b1d2a54e",
+      "runtime_statistics": {
+        "Timeline": {
+          "QueryQueueTimeInMillis": 97,
+          "ServicePreProcessingTimeInMillis": 56,
+          "QueryPlanningTimeInMillis": 649,
+          "EngineExecutionTimeInMillis": 3261,
+          "ServiceProcessingTimeInMillis": 44,
+          "TotalExecutionTimeInMillis": 3458
+        },
+        "Rows": {
+          "InputRows": 302939,
+          "InputBytes": 170051646,
+          "OutputBytes": 1632,
+          "OutputRows": 19
+        },
+        "OutputStage": {
+          "StageId": 0,
+          "State": "FINISHED",
+          "OutputBytes": 1632,
+          "OutputRows": 19,
+          "InputBytes": 1632,
+          "InputRows": 19,
+          "ExecutionTime": 996,
+          "QueryStagePlan": {
+            "Name": "Output",
+            "Identifier": "{\"columnNames\":\"[category, rows, product_id_chars, product_name_chars, ingredients, reviews, first_batch, last_batch]\"}",
+            "Children": [
+              {
+                "Name": "RemoteMerge",
+                "Identifier": "{\"sourceFragmentIds\":\"[1]\"}",
+                "Children": [],
+                "RemoteSources": [
+                  "1"
+                ]
+              }
+            ]
+          },
+          "SubStages": [
+            {
+              "StageId": 1,
+              "State": "FINISHED",
+              "OutputBytes": 1632,
+              "OutputRows": 19,
+              "InputBytes": 1632,
+              "InputRows": 19,
+              "ExecutionTime": 19480,
+              "QueryStagePlan": {
+                "Name": "LocalMerge",
+                "Identifier": "{\"orderBy\":\"[category ASC NULLS FIRST]\"}",
+                "Children": [
+                  {
+                    "Name": "PartialSort",
+                    "Identifier": "{\"orderBy\":\"[category ASC NULLS FIRST]\"}",
+                    "Children": [
+                      {
+                        "Name": "RemoteSource",
+                        "Identifier": "{\"sourceFragmentIds\":\"[2]\"}",
+                        "Children": [],
+                        "RemoteSources": [
+                          "2"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "SubStages": [
+                {
+                  "StageId": 2,
+                  "State": "FINISHED",
+                  "OutputBytes": 1632,
+                  "OutputRows": 19,
+                  "InputBytes": 217439,
+                  "InputRows": 1722,
+                  "ExecutionTime": 30172,
+                  "QueryStagePlan": {
+                    "Name": "Aggregate",
+                    "Identifier": "{\"type\":\"FINAL\",\"keys\":\"[category]\",\"hash\":\"[]\"}",
+                    "Children": [
+                      {
+                        "Name": "LocalExchange",
+                        "Identifier": "{\"partitioning\":\"HASH\",\"isReplicateNullsAndAny\":\"\",\"hashColumn\":\"[]\",\"arguments\":\"[\\\"category\\\"]\"}",
+                        "Children": [
+                          {
+                            "Name": "RemoteSource",
+                            "Identifier": "{\"sourceFragmentIds\":\"[3]\"}",
+                            "Children": [],
+                            "RemoteSources": [
+                              "3"
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "SubStages": [
+                    {
+                      "StageId": 3,
+                      "State": "FINISHED",
+                      "OutputBytes": 244991,
+                      "OutputRows": 1722,
+                      "InputBytes": 170051646,
+                      "InputRows": 302939,
+                      "ExecutionTime": 102600,
+                      "QueryStagePlan": {
+                        "Name": "Aggregate",
+                        "Identifier": "{\"type\":\"PARTIAL\",\"keys\":\"[category]\",\"hash\":\"[]\"}",
+                        "Children": [
+                          {
+                            "Name": "ScanProject",
+                            "Identifier": "{\"table\":\"awsdatacatalog$iceberg-aws:oliveyoung_db.oliveyoung_silver_history$data@5281192804406411760\",\"projectLocality\":\"LOCAL\",\"protectedBarrier\":\"NONE\"}",
+                            "Children": []
+                          }
+                        ]
+                      },
+                      "SubStages": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "api_calls": {
+        "start_query_execution": 1,
+        "get_query_execution": 5,
+        "get_query_results": 1,
+        "get_query_runtime_statistics": 1
+      }
+    },
+    {
+      "label": "before_3",
+      "query_id": "ceab6d4a-651f-4912-8f31-c092d93dc98c",
+      "sql": "SELECT category, count(*) AS rows,\n            sum(length(product_id)) AS product_id_chars,\n            sum(length(product_name)) AS product_name_chars,\n            sum(cardinality(product_ingredients)) AS ingredients,\n            sum(review_count) AS reviews, min(batch_date) AS first_batch,\n            max(batch_date) AS last_batch\n            FROM \"oliveyoung_db\".\"oliveyoung_silver_history\"\n            GROUP BY category ORDER BY category NULLS FIRST",
+      "execution": {
+        "QueryExecutionId": "ceab6d4a-651f-4912-8f31-c092d93dc98c",
+        "Query": "SELECT category, count(*) AS rows,\n            sum(length(product_id)) AS product_id_chars,\n            sum(length(product_name)) AS product_name_chars,\n            sum(cardinality(product_ingredients)) AS ingredients,\n            sum(review_count) AS reviews, min(batch_date) AS first_batch,\n            max(batch_date) AS last_batch\n            FROM \"oliveyoung_db\".\"oliveyoung_silver_history\"\n            GROUP BY category ORDER BY category NULLS FIRST",
+        "StatementType": "DML",
+        "ResultConfiguration": {
+          "OutputLocation": "s3://oliveyoung-crawl-data/athena-results/ceab6d4a-651f-4912-8f31-c092d93dc98c.csv"
+        },
+        "ResultReuseConfiguration": {
+          "ResultReuseByAgeConfiguration": {
+            "Enabled": false
+          }
+        },
+        "QueryExecutionContext": {
+          "Database": "oliveyoung_db",
+          "Catalog": "awsdatacatalog"
+        },
+        "Status": {
+          "State": "SUCCEEDED",
+          "SubmissionDateTime": "2026-11-03 04:47:08.807000+00:00",
+          "CompletionDateTime": "2026-11-03 04:47:10.382000+00:00"
+        },
+        "Statistics": {
+          "EngineExecutionTimeInMillis": 1457,
+          "DataScannedInBytes": 47104552,
+          "TotalExecutionTimeInMillis": 1575,
+          "QueryQueueTimeInMillis": 54,
+          "ServicePreProcessingTimeInMillis": 35,
+          "QueryPlanningTimeInMillis": 277,
+          "ServiceProcessingTimeInMillis": 29,
+          "ResultReuseInformation": {
+            "ReusedPreviousResult": false
+          }
+        },
+        "WorkGroup": "oliveyoung-ops",
+        "EngineVersion": {
+          "SelectedEngineVersion": "Athena engine version 3",
+          "EffectiveEngineVersion": "Athena engine version 3"
+        },
+        "SubstatementType": "SELECT"
+      },
+      "client_wall_seconds": 2.143958463333547,
+      "result_sha256": "9b93246966d2e21a0f56c1516929461807b92ad55cfdc13f194d1038b1d2a54e",
+      "runtime_statistics": {
+        "Timeline": {
+          "QueryQueueTimeInMillis": 54,
+          "ServicePreProcessingTimeInMillis": 35,
+          "QueryPlanningTimeInMillis": 277,
+          "EngineExecutionTimeInMillis": 1457,
+          "ServiceProcessingTimeInMillis": 29,
+          "TotalExecutionTimeInMillis": 1575
+        },
+        "Rows": {
+          "InputRows": 302939,
+          "InputBytes": 170051646,
+          "OutputBytes": 1632,
+          "OutputRows": 19
+        },
+        "OutputStage": {
+          "StageId": 0,
+          "State": "FINISHED",
+          "OutputBytes": 1632,
+          "OutputRows": 19,
+          "InputBytes": 1632,
+          "InputRows": 19,
+          "ExecutionTime": 640,
+          "QueryStagePlan": {
+            "Name": "Output",
+            "Identifier": "{\"columnNames\":\"[category, rows, product_id_chars, product_name_chars, ingredients, reviews, first_batch, last_batch]\"}",
+            "Children": [
+              {
+                "Name": "RemoteMerge",
+                "Identifier": "{\"sourceFragmentIds\":\"[1]\"}",
+                "Children": [],
+                "RemoteSources": [
+                  "1"
+                ]
+              }
+            ]
+          },
+          "SubStages": [
+            {
+              "StageId": 1,
+              "State": "FINISHED",
+              "OutputBytes": 1632,
+              "OutputRows": 19,
+              "InputBytes": 1632,
+              "InputRows": 19,
+              "ExecutionTime": 13004,
+              "QueryStagePlan": {
+                "Name": "LocalMerge",
+                "Identifier": "{\"orderBy\":\"[category ASC NULLS FIRST]\"}",
+                "Children": [
+                  {
+                    "Name": "PartialSort",
+                    "Identifier": "{\"orderBy\":\"[category ASC NULLS FIRST]\"}",
+                    "Children": [
+                      {
+                        "Name": "RemoteSource",
+                        "Identifier": "{\"sourceFragmentIds\":\"[2]\"}",
+                        "Children": [],
+                        "RemoteSources": [
+                          "2"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "SubStages": [
+                {
+                  "StageId": 2,
+                  "State": "FINISHED",
+                  "OutputBytes": 1632,
+                  "OutputRows": 19,
+                  "InputBytes": 217439,
+                  "InputRows": 1722,
+                  "ExecutionTime": 20053,
+                  "QueryStagePlan": {
+                    "Name": "Aggregate",
+                    "Identifier": "{\"type\":\"FINAL\",\"keys\":\"[category]\",\"hash\":\"[]\"}",
+                    "Children": [
+                      {
+                        "Name": "LocalExchange",
+                        "Identifier": "{\"partitioning\":\"HASH\",\"isReplicateNullsAndAny\":\"\",\"hashColumn\":\"[]\",\"arguments\":\"[\\\"category\\\"]\"}",
+                        "Children": [
+                          {
+                            "Name": "RemoteSource",
+                            "Identifier": "{\"sourceFragmentIds\":\"[3]\"}",
+                            "Children": [],
+                            "RemoteSources": [
+                              "3"
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "SubStages": [
+                    {
+                      "StageId": 3,
+                      "State": "FINISHED",
+                      "OutputBytes": 244991,
+                      "OutputRows": 1722,
+                      "InputBytes": 170051646,
+                      "InputRows": 302939,
+                      "ExecutionTime": 80190,
+                      "QueryStagePlan": {
+                        "Name": "Aggregate",
+                        "Identifier": "{\"type\":\"PARTIAL\",\"keys\":\"[category]\",\"hash\":\"[]\"}",
+                        "Children": [
+                          {
+                            "Name": "ScanProject",
+                            "Identifier": "{\"table\":\"awsdatacatalog$iceberg-aws:oliveyoung_db.oliveyoung_silver_history$data@5281192804406411760\",\"projectLocality\":\"LOCAL\",\"protectedBarrier\":\"NONE\"}",
+                            "Children": []
+                          }
+                        ]
+                      },
+                      "SubStages": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "api_calls": {
+        "start_query_execution": 1,
+        "get_query_execution": 3,
+        "get_query_results": 1,
+        "get_query_runtime_statistics": 1
+      }
+    },
+    {
+      "label": "optimize",
+      "query_id": "6d67096d-74e6-4836-a908-b5cc772ec880",
+      "sql": "OPTIMIZE oliveyoung_db.oliveyoung_silver_history REWRITE DATA USING BIN_PACK",
+      "execution": {
+        "QueryExecutionId": "6d67096d-74e6-4836-a908-b5cc772ec880",
+        "Query": "OPTIMIZE oliveyoung_db.oliveyoung_silver_history REWRITE DATA USING BIN_PACK",
+        "StatementType": "DDL",
+        "ResultConfiguration": {
+          "OutputLocation": "s3://oliveyoung-crawl-data/athena-results/tables/6d67096d-74e6-4836-a908-b5cc772ec880"
+        },
+        "ResultReuseConfiguration": {
+          "ResultReuseByAgeConfiguration": {
+            "Enabled": false
+          }
+        },
+        "QueryExecutionContext": {
+          "Database": "oliveyoung_db",
+          "Catalog": "awsdatacatalog"
+        },
+        "Status": {
+          "State": "SUCCEEDED",
+          "SubmissionDateTime": "2026-11-03 04:51:15.659000+00:00",
+          "CompletionDateTime": "2026-11-03 04:51:29.103000+00:00"
+        },
+        "Statistics": {
+          "EngineExecutionTimeInMillis": 13237,
+          "DataScannedInBytes": 126941534,
+          "DataManifestLocation": "s3://oliveyoung-crawl-data/athena-results/tables/6d67096d-74e6-4836-a908-b5cc772ec880-manifest.csv",
+          "TotalExecutionTimeInMillis": 13444,
+          "QueryQueueTimeInMillis": 98,
+          "ServicePreProcessingTimeInMillis": 86,
+          "QueryPlanningTimeInMillis": 315,
+          "ServiceProcessingTimeInMillis": 23,
+          "ResultReuseInformation": {
+            "ReusedPreviousResult": false
+          }
+        },
+        "WorkGroup": "oliveyoung-ops",
+        "EngineVersion": {
+          "SelectedEngineVersion": "Athena engine version 3",
+          "EffectiveEngineVersion": "Athena engine version 3"
+        },
+        "SubstatementType": "CREATE_TABLE_AS_SELECT"
+      },
+      "client_wall_seconds": 14.512437985278666,
+      "result_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "runtime_statistics": {
+        "Timeline": {
+          "QueryQueueTimeInMillis": 98,
+          "ServicePreProcessingTimeInMillis": 86,
+          "QueryPlanningTimeInMillis": 315,
+          "EngineExecutionTimeInMillis": 13237,
+          "ServiceProcessingTimeInMillis": 23,
+          "TotalExecutionTimeInMillis": 13444
+        },
+        "Rows": {
+          "InputRows": 302659,
+          "InputBytes": 627836586,
+          "OutputBytes": 0,
+          "OutputRows": 0
+        },
+        "OutputStage": {
+          "StageId": 0,
+          "State": "FINISHED",
+          "OutputBytes": 0,
+          "OutputRows": 0,
+          "InputBytes": 38749,
+          "InputRows": 82,
+          "ExecutionTime": 47128,
+          "QueryStagePlan": {
+            "Name": "Output",
+            "Identifier": "{\"columnNames\":\"[rows]\"}",
+            "Children": [
+              {
+                "Name": "TableCommit",
+                "Identifier": "{\"target\":\"awsdatacatalog$iceberg-aws:schemaTableName:oliveyoung_db.oliveyoung_silver_history, procedureId:OPTIMIZE, procedureHandle:{IcebergOptimizeHandle{snapshotId=Optional[5281192804406411760], schemaAsJson={\\\"type\\\":\\\"struct\\\",\\\"schema-id\\\":2,\\\"fields\\\":[{\\\"id\\\":1,\\\"name\\\":\\\"category\\\",\\\"required\\\":false,\\\"type\\\":\\\"string\\\"},{\\\"id\\\":2,\\\"name\\\":\\\"main_category\\\",\\\"required\\\":false,\\\"type\\\":\\\"string\\\"},{\\\"id\\\":3,\\\"name\\\":\\\"sub_category\\\",\\\"required\\\":false,\\\"type\\\":\\\"string\\\"},{\\\"id\\\":4,\\\"name\\\":\\\"product_id\\\",\\\"required\\\":true,\\\"type\\\":\\\"string\\\"},{\\\"id\\\":5,\\\"name\\\":\\\"product_brand\\\",\\\"required\\\":false,\\\"type\\\":\\\"string\\\"},{\\\"id\\\":6,\\\"name\\\":\\\"product_name\\\",\\\"required\\\":false,\\\"type\\\":\\\"string\\\"},{\\\"id\\\":7,\\\"name\\\":\\\"product_name_raw\\\",\\\"required\\\":false,\\\"type\\\":\\\"string\\\"},{\\\"id\\\":8,\\\"name\\\":\\\"product_ingredients\\\",\\\"required\\\":false,\\\"type\\\":{\\\"type\\\":\\\"list\\\",\\\"element-id\\\":17,\\\"element\\\":\\\"string\\\",\\\"element-required\\\":false}},{\\\"id\\\":9,\\\"name\\\":\\\"product_ingredients_raw\\\",\\\"required\\\":false,\\\"type\\\":\\\"string\\\"},{\\\"id\\\":10,\\\"name\\\":\\\"rating\\\",\\\"required\\\":false,\\\"type\\\":\\\"float\\\"},{\\\"id\\\":11,\\\"name\\\":\\\"review_count\\\",\\\"required\\\":false,\\\"type\\\":\\\"int\\\"},{\\\"id\\\":12,\\\"name\\\":\\\"review_stats\\\",\\\"required\\\":false,\\\"type\\\":{\\\"type\\\":\\\"map\\\",\\\"key-id\\\":18,\\\"key\\\":\\\"string\\\",\\\"value-id\\\":19,\\\"value\\\":{\\\"type\\\":\\\"map\\\",\\\"key-id\\\":20,\\\"key\\\":\\\"string\\\",\\\"value-id\\\":21,\\\"value\\\":\\\"string\\\",\\\"value-required\\\":false},\\\"value-required\\\":false}},{\\\"id\\\":13,\\\"name\\\":\\\"product_url\\\",\\\"required\\\":false,\\\"type\\\":\\\"string\\\"},{\\\"id\\\":14,\\\"name\\\":\\\"crawled_at\\\",\\\"required\\\":false,\\\"type\\\":\\\"timestamptz\\\"},{\\\"id\\\":15,\\\"name\\\":\\\"batch_job\\\",\\\"required\\\":false,\\\"type\\\":\\\"string\\\"},{\\\"id\\\":16,\\\"name\\\":\\\"batch_date\\\",\\\"required\\\":false,\\\"type\\\":\\\"timestamptz\\\"},{\\\"id\\\":22,\\\"name\\\":\\\"goods_no\\\",\\\"required\\\":false,\\\"type\\\":\\\"string\\\"},{\\\"id\\\":23,\\\"name\\\":\\\"source_run_id\\\",\\\"required\\\":false,\\\"type\\\":\\\"string\\\"}]}, partitionSpecAsJson={\\\"spec-id\\\":0,\\\"fields\\\":[{\\\"name\\\":\\\"category\\\",\\\"transform\\\":\\\"identity\\\",\\\"source-id\\\":1,\\\"field-id\\\":1000}]}, tableColumns=[1:category:varchar, 2:main_category:varchar, 3:sub_category:varchar, 4:product_id:varchar, 5:product_brand:varchar, 6:product_name:varchar, 7:product_name_raw:varchar, 8:product_ingredients:array(varchar), 9:product_ingredients_raw:varchar, 10:rating:real, 11:review_count:integer, 12:review_stats:map(varchar, map(varchar, varchar)), 13:product_url:varchar, 14:crawled_at:timestamp(6) with time zone, 15:batch_job:varchar, 16:batch_date:timestamp(6) with time zone, 22:goods_no:varchar, 23:source_run_id:varchar], fileFormat=PARQUET, tableStorageProperties={___glue_table_version_id___=110, previous_metadata_location=s3://oliveyoung-crawl-data/silver/history/metadata/00109-53166858-99c5-468b-b6a7-a226196b39f6.metadata.json, ___lake_formation_authorized_columns___={\\n  \\\"authorizedColumns\\\" : [ \\\"\\\\\\\"batch_date\\\\\\\"\\\", \\\"\\\\\\\"batch_job\\\\\\\"\\\", \\\"\\\\\\\"category\\\\\\\"\\\", \\\"\\\\\\\"crawled_at\\\\\\\"\\\", \\\"\\\\\\\"goods_no\\\\\\\"\\\", \\\"\\\\\\\"main_category\\\\\\\"\\\", \\\"\\\\\\\"product_brand\\\\\\\"\\\", \\\"\\\\\\\"product_id\\\\\\\"\\\", \\\"\\\\\\\"product_ingredients\\\\\\\"\\\", \\\"\\\\\\\"product_ingredients_raw\\\\\\\"\\\", \\\"\\\\\\\"product_name\\\\\\\"\\\", \\\"\\\\\\\"product_name_raw\\\\\\\"\\\", \\\"\\\\\\\"product_url\\\\\\\"\\\", \\\"\\\\\\\"rating\\\\\\\"\\\", \\\"\\\\\\\"review_count\\\\\\\"\\\", \\\"\\\\\\\"review_stats\\\\\\\"\\\", \\\"\\\\\\\"source_run_id\\\\\\\"\\\", \\\"\\\\\\\"sub_category\\\\\\\"\\\" ]\\n}, target_table_region=ap-northeast-2, ___table_owner_account_id___=973972497926, __table_id__=fccd0e2ddb1e4cb38cb501c8cec6c43c, ___use_lakeformation_credentials___=false, metadata_location=s3://oliveyoung-crawl-data/silver/history/metadata/00110-c769ef12-29fb-4881-959c-49e41761f798.metadata.json, __athena_nested_field_filter_enabled=true, ___is_glue_materialized_view___=false, table_type=ICEBERG, ___use_lakeformation_row_column_security___=false}, maxScannedFileSize=100MB, retriesEnabled=false, maxFileCountPerOptimize=500000, maxPartitionCountPerOptimize=100}}\"}",
+                "Children": [
+                  {
+                    "Name": "LocalExchange",
+                    "Identifier": "{\"partitioning\":\"SINGLE\",\"isReplicateNullsAndAny\":\"\",\"hashColumn\":\"[]\",\"arguments\":\"[]\"}",
+                    "Children": [
+                      {
+                        "Name": "RemoteSource",
+                        "Identifier": "{\"sourceFragmentIds\":\"[1]\"}",
+                        "Children": [],
+                        "RemoteSources": [
+                          "1"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "SubStages": [
+            {
+              "StageId": 1,
+              "State": "FINISHED",
+              "OutputBytes": 38749,
+              "OutputRows": 82,
+              "InputBytes": 922480577,
+              "InputRows": 302659,
+              "ExecutionTime": 205560,
+              "QueryStagePlan": {
+                "Name": "TableExecute",
+                "Identifier": "{}",
+                "Children": [
+                  {
+                    "Name": "LocalExchange",
+                    "Identifier": "{\"partitioning\":\"awsdatacatalog$iceberg-aws:IcebergPartitioningHandle{partitioning=[category]}\",\"isReplicateNullsAndAny\":\"\",\"hashColumn\":\"[]\",\"arguments\":\"[\\\"category\\\"]\"}",
+                    "Children": [
+                      {
+                        "Name": "RemoteSource",
+                        "Identifier": "{\"sourceFragmentIds\":\"[2]\"}",
+                        "Children": [],
+                        "RemoteSources": [
+                          "2"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "SubStages": [
+                {
+                  "StageId": 2,
+                  "State": "FINISHED",
+                  "OutputBytes": 918999858,
+                  "OutputRows": 302659,
+                  "InputBytes": 627836586,
+                  "InputRows": 302659,
+                  "ExecutionTime": 104460,
+                  "QueryStagePlan": {
+                    "Name": "TableScan",
+                    "Identifier": "{\"table\":\"awsdatacatalog$iceberg-aws:oliveyoung_db.oliveyoung_silver_history$data@5281192804406411760\"}",
+                    "Children": []
+                  },
+                  "SubStages": []
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "api_calls": {
+        "start_query_execution": 1,
+        "get_query_execution": 15,
+        "get_query_results": 1,
+        "get_query_runtime_statistics": 1
+      }
+    },
+    {
+      "label": "layout_after",
+      "query_id": "dd900ecf-5a0c-4822-8bf5-fe863083b177",
+      "sql": "SELECT count(*) AS files,\n            sum(file_size_in_bytes) AS bytes, sum(record_count) AS records\n            FROM \"oliveyoung_db\".\"oliveyoung_silver_history$files\" WHERE content = 0",
+      "execution": {
+        "QueryExecutionId": "dd900ecf-5a0c-4822-8bf5-fe863083b177",
+        "Query": "SELECT count(*) AS files,\n            sum(file_size_in_bytes) AS bytes, sum(record_count) AS records\n            FROM \"oliveyoung_db\".\"oliveyoung_silver_history$files\" WHERE content = 0",
+        "StatementType": "DML",
+        "ResultConfiguration": {
+          "OutputLocation": "s3://oliveyoung-crawl-data/athena-results/dd900ecf-5a0c-4822-8bf5-fe863083b177.csv"
+        },
+        "ResultReuseConfiguration": {
+          "ResultReuseByAgeConfiguration": {
+            "Enabled": false
+          }
+        },
+        "QueryExecutionContext": {
+          "Database": "oliveyoung_db",
+          "Catalog": "awsdatacatalog"
+        },
+        "Status": {
+          "State": "SUCCEEDED",
+          "SubmissionDateTime": "2026-11-03 04:51:30.330000+00:00",
+          "CompletionDateTime": "2026-11-03 04:51:31.205000+00:00"
+        },
+        "Statistics": {
+          "EngineExecutionTimeInMillis": 751,
+          "DataScannedInBytes": 51655,
+          "TotalExecutionTimeInMillis": 875,
+          "QueryQueueTimeInMillis": 57,
+          "ServicePreProcessingTimeInMillis": 45,
+          "QueryPlanningTimeInMillis": 30,
+          "ServiceProcessingTimeInMillis": 22,
+          "ResultReuseInformation": {
+            "ReusedPreviousResult": false
+          }
+        },
+        "WorkGroup": "oliveyoung-ops",
+        "EngineVersion": {
+          "SelectedEngineVersion": "Athena engine version 3",
+          "EffectiveEngineVersion": "Athena engine version 3"
+        },
+        "SubstatementType": "SELECT"
+      },
+      "client_wall_seconds": 1.1268706237897277,
+      "result_sha256": "0368ecd03e28a516027226616d1d53765f3cf5b0173ce5199aa5cd73a00bdf73",
+      "runtime_statistics": {
+        "Timeline": {
+          "QueryQueueTimeInMillis": 57,
+          "ServicePreProcessingTimeInMillis": 45,
+          "QueryPlanningTimeInMillis": 30,
+          "EngineExecutionTimeInMillis": 751,
+          "ServiceProcessingTimeInMillis": 22,
+          "TotalExecutionTimeInMillis": 875
+        },
+        "Rows": {
+          "InputRows": 19,
+          "InputBytes": 51655,
+          "OutputBytes": 27,
+          "OutputRows": 1
+        },
+        "OutputStage": {
+          "StageId": 0,
+          "State": "FINISHED",
+          "OutputBytes": 27,
+          "OutputRows": 1,
+          "InputBytes": 47,
+          "InputRows": 1,
+          "ExecutionTime": 1542,
+          "QueryStagePlan": {
+            "Name": "Output",
+            "Identifier": "{\"columnNames\":\"[files, bytes, records]\"}",
+            "Children": [
+              {
+                "Name": "Aggregate",
+                "Identifier": "{\"type\":\"FINAL\",\"keys\":\"\",\"hash\":\"[]\"}",
+                "Children": [
+                  {
+                    "Name": "LocalExchange",
+                    "Identifier": "{\"partitioning\":\"SINGLE\",\"isReplicateNullsAndAny\":\"\",\"hashColumn\":\"[]\",\"arguments\":\"[]\"}",
+                    "Children": [
+                      {
+                        "Name": "RemoteSource",
+                        "Identifier": "{\"sourceFragmentIds\":\"[1]\"}",
+                        "Children": [],
+                        "RemoteSources": [
+                          "1"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "SubStages": [
+            {
+              "StageId": 1,
+              "State": "FINISHED",
+              "OutputBytes": 47,
+              "OutputRows": 1,
+              "InputBytes": 51655,
+              "InputRows": 19,
+              "ExecutionTime": 358,
+              "QueryStagePlan": {
+                "Name": "Aggregate",
+                "Identifier": "{\"type\":\"PARTIAL\",\"keys\":\"\",\"hash\":\"[]\"}",
+                "Children": [
+                  {
+                    "Name": "ScanFilterProject",
+                    "Identifier": "{\"table\":\"awsdatacatalog$iceberg-aws:oliveyoung_db.oliveyoung_silver_history$files\",\"filterPredicate\":\"(\\\"content\\\" = 0)\",\"projectLocality\":\"LOCAL\",\"protectedBarrier\":\"NONE\"}",
+                    "Children": []
+                  }
+                ]
+              },
+              "SubStages": []
+            }
+          ]
+        }
+      },
+      "api_calls": {
+        "start_query_execution": 1,
+        "get_query_execution": 2,
+        "get_query_results": 1,
+        "get_query_runtime_statistics": 1
+      }
+    },
+    {
+      "label": "warmup_after",
+      "query_id": "2630d748-cd45-4f13-a380-e3705a1860c5",
+      "sql": "SELECT category, count(*) AS rows,\n            sum(length(product_id)) AS product_id_chars,\n            sum(length(product_name)) AS product_name_chars,\n            sum(cardinality(product_ingredients)) AS ingredients,\n            sum(review_count) AS reviews, min(batch_date) AS first_batch,\n            max(batch_date) AS last_batch\n            FROM \"oliveyoung_db\".\"oliveyoung_silver_history\"\n            GROUP BY category ORDER BY category NULLS FIRST",
+      "execution": {
+        "QueryExecutionId": "2630d748-cd45-4f13-a380-e3705a1860c5",
+        "Query": "SELECT category, count(*) AS rows,\n            sum(length(product_id)) AS product_id_chars,\n            sum(length(product_name)) AS product_name_chars,\n            sum(cardinality(product_ingredients)) AS ingredients,\n            sum(review_count) AS reviews, min(batch_date) AS first_batch,\n            max(batch_date) AS last_batch\n            FROM \"oliveyoung_db\".\"oliveyoung_silver_history\"\n            GROUP BY category ORDER BY category NULLS FIRST",
+        "StatementType": "DML",
+        "ResultConfiguration": {
+          "OutputLocation": "s3://oliveyoung-crawl-data/athena-results/2630d748-cd45-4f13-a380-e3705a1860c5.csv"
+        },
+        "ResultReuseConfiguration": {
+          "ResultReuseByAgeConfiguration": {
+            "Enabled": false
+          }
+        },
+        "QueryExecutionContext": {
+          "Database": "oliveyoung_db",
+          "Catalog": "awsdatacatalog"
+        },
+        "Status": {
+          "State": "SUCCEEDED",
+          "SubmissionDateTime": "2026-11-03 04:51:31.620000+00:00",
+          "CompletionDateTime": "2026-11-03 04:51:32.682000+00:00"
+        },
+        "Statistics": {
+          "EngineExecutionTimeInMillis": 889,
+          "DataScannedInBytes": 7981509,
+          "TotalExecutionTimeInMillis": 1062,
+          "QueryQueueTimeInMillis": 98,
+          "ServicePreProcessingTimeInMillis": 42,
+          "QueryPlanningTimeInMillis": 154,
+          "ServiceProcessingTimeInMillis": 33,
+          "ResultReuseInformation": {
+            "ReusedPreviousResult": false
+          }
+        },
+        "WorkGroup": "oliveyoung-ops",
+        "EngineVersion": {
+          "SelectedEngineVersion": "Athena engine version 3",
+          "EffectiveEngineVersion": "Athena engine version 3"
+        },
+        "SubstatementType": "SELECT"
+      },
+      "client_wall_seconds": 2.1661226702854037,
+      "result_sha256": "9b93246966d2e21a0f56c1516929461807b92ad55cfdc13f194d1038b1d2a54e",
+      "runtime_statistics": {
+        "Timeline": {
+          "QueryQueueTimeInMillis": 98,
+          "ServicePreProcessingTimeInMillis": 42,
+          "QueryPlanningTimeInMillis": 154,
+          "EngineExecutionTimeInMillis": 889,
+          "ServiceProcessingTimeInMillis": 33,
+          "TotalExecutionTimeInMillis": 1062
+        },
+        "Rows": {
+          "InputRows": 302939,
+          "InputBytes": 58987605,
+          "OutputBytes": 1632,
+          "OutputRows": 19
+        },
+        "OutputStage": {
+          "StageId": 0,
+          "State": "FINISHED",
+          "OutputBytes": 1632,
+          "OutputRows": 19,
+          "InputBytes": 1632,
+          "InputRows": 19,
+          "ExecutionTime": 323,
+          "QueryStagePlan": {
+            "Name": "Output",
+            "Identifier": "{\"columnNames\":\"[category, rows, product_id_chars, product_name_chars, ingredients, reviews, first_batch, last_batch]\"}",
+            "Children": [
+              {
+                "Name": "RemoteMerge",
+                "Identifier": "{\"sourceFragmentIds\":\"[1]\"}",
+                "Children": [],
+                "RemoteSources": [
+                  "1"
+                ]
+              }
+            ]
+          },
+          "SubStages": [
+            {
+              "StageId": 1,
+              "State": "FINISHED",
+              "OutputBytes": 1632,
+              "OutputRows": 19,
+              "InputBytes": 1632,
+              "InputRows": 19,
+              "ExecutionTime": 1628,
+              "QueryStagePlan": {
+                "Name": "LocalMerge",
+                "Identifier": "{\"orderBy\":\"[category ASC NULLS FIRST]\"}",
+                "Children": [
+                  {
+                    "Name": "PartialSort",
+                    "Identifier": "{\"orderBy\":\"[category ASC NULLS FIRST]\"}",
+                    "Children": [
+                      {
+                        "Name": "RemoteSource",
+                        "Identifier": "{\"sourceFragmentIds\":\"[2]\"}",
+                        "Children": [],
+                        "RemoteSources": [
+                          "2"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "SubStages": [
+                {
+                  "StageId": 2,
+                  "State": "FINISHED",
+                  "OutputBytes": 1632,
+                  "OutputRows": 19,
+                  "InputBytes": 2392,
+                  "InputRows": 19,
+                  "ExecutionTime": 2520,
+                  "QueryStagePlan": {
+                    "Name": "Aggregate",
+                    "Identifier": "{\"type\":\"FINAL\",\"keys\":\"[category]\",\"hash\":\"[]\"}",
+                    "Children": [
+                      {
+                        "Name": "LocalExchange",
+                        "Identifier": "{\"partitioning\":\"HASH\",\"isReplicateNullsAndAny\":\"\",\"hashColumn\":\"[]\",\"arguments\":\"[\\\"category\\\"]\"}",
+                        "Children": [
+                          {
+                            "Name": "RemoteSource",
+                            "Identifier": "{\"sourceFragmentIds\":\"[3]\"}",
+                            "Children": [],
+                            "RemoteSources": [
+                              "3"
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "SubStages": [
+                    {
+                      "StageId": 3,
+                      "State": "FINISHED",
+                      "OutputBytes": 2696,
+                      "OutputRows": 19,
+                      "InputBytes": 58987605,
+                      "InputRows": 302939,
+                      "ExecutionTime": 6440,
+                      "QueryStagePlan": {
+                        "Name": "Aggregate",
+                        "Identifier": "{\"type\":\"PARTIAL\",\"keys\":\"[category]\",\"hash\":\"[]\"}",
+                        "Children": [
+                          {
+                            "Name": "ScanProject",
+                            "Identifier": "{\"table\":\"awsdatacatalog$iceberg-aws:oliveyoung_db.oliveyoung_silver_history$data@7648899446181468433\",\"projectLocality\":\"LOCAL\",\"protectedBarrier\":\"NONE\"}",
+                            "Children": []
+                          }
+                        ]
+                      },
+                      "SubStages": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "api_calls": {
+        "start_query_execution": 1,
+        "get_query_execution": 3,
+        "get_query_results": 1,
+        "get_query_runtime_statistics": 1
+      }
+    },
+    {
+      "label": "after_1",
+      "query_id": "7cfbf4ad-0604-4d0b-a60d-118199351d29",
+      "sql": "SELECT category, count(*) AS rows,\n            sum(length(product_id)) AS product_id_chars,\n            sum(length(product_name)) AS product_name_chars,\n            sum(cardinality(product_ingredients)) AS ingredients,\n            sum(review_count) AS reviews, min(batch_date) AS first_batch,\n            max(batch_date) AS last_batch\n            FROM \"oliveyoung_db\".\"oliveyoung_silver_history\"\n            GROUP BY category ORDER BY category NULLS FIRST",
+      "execution": {
+        "QueryExecutionId": "7cfbf4ad-0604-4d0b-a60d-118199351d29",
+        "Query": "SELECT category, count(*) AS rows,\n            sum(length(product_id)) AS product_id_chars,\n            sum(length(product_name)) AS product_name_chars,\n            sum(cardinality(product_ingredients)) AS ingredients,\n            sum(review_count) AS reviews, min(batch_date) AS first_batch,\n            max(batch_date) AS last_batch\n            FROM \"oliveyoung_db\".\"oliveyoung_silver_history\"\n            GROUP BY category ORDER BY category NULLS FIRST",
+        "StatementType": "DML",
+        "ResultConfiguration": {
+          "OutputLocation": "s3://oliveyoung-crawl-data/athena-results/7cfbf4ad-0604-4d0b-a60d-118199351d29.csv"
+        },
+        "ResultReuseConfiguration": {
+          "ResultReuseByAgeConfiguration": {
+            "Enabled": false
+          }
+        },
+        "QueryExecutionContext": {
+          "Database": "oliveyoung_db",
+          "Catalog": "awsdatacatalog"
+        },
+        "Status": {
+          "State": "SUCCEEDED",
+          "SubmissionDateTime": "2026-11-03 04:52:02.078000+00:00",
+          "CompletionDateTime": "2026-11-03 04:52:03.355000+00:00"
+        },
+        "Statistics": {
+          "EngineExecutionTimeInMillis": 1107,
+          "DataScannedInBytes": 7981509,
+          "TotalExecutionTimeInMillis": 1277,
+          "QueryQueueTimeInMillis": 104,
+          "ServicePreProcessingTimeInMillis": 40,
+          "QueryPlanningTimeInMillis": 159,
+          "ServiceProcessingTimeInMillis": 26,
+          "ResultReuseInformation": {
+            "ReusedPreviousResult": false
+          }
+        },
+        "WorkGroup": "oliveyoung-ops",
+        "EngineVersion": {
+          "SelectedEngineVersion": "Athena engine version 3",
+          "EffectiveEngineVersion": "Athena engine version 3"
+        },
+        "SubstatementType": "SELECT"
+      },
+      "client_wall_seconds": 2.2085478543303907,
+      "result_sha256": "9b93246966d2e21a0f56c1516929461807b92ad55cfdc13f194d1038b1d2a54e",
+      "runtime_statistics": {
+        "Timeline": {
+          "QueryQueueTimeInMillis": 104,
+          "ServicePreProcessingTimeInMillis": 40,
+          "QueryPlanningTimeInMillis": 159,
+          "EngineExecutionTimeInMillis": 1107,
+          "ServiceProcessingTimeInMillis": 26,
+          "TotalExecutionTimeInMillis": 1277
+        },
+        "Rows": {
+          "InputRows": 302939,
+          "InputBytes": 58987605,
+          "OutputBytes": 1632,
+          "OutputRows": 19
+        },
+        "OutputStage": {
+          "StageId": 0,
+          "State": "FINISHED",
+          "OutputBytes": 1632,
+          "OutputRows": 19,
+          "InputBytes": 1632,
+          "InputRows": 19,
+          "ExecutionTime": 379,
+          "QueryStagePlan": {
+            "Name": "Output",
+            "Identifier": "{\"columnNames\":\"[category, rows, product_id_chars, product_name_chars, ingredients, reviews, first_batch, last_batch]\"}",
+            "Children": [
+              {
+                "Name": "RemoteMerge",
+                "Identifier": "{\"sourceFragmentIds\":\"[1]\"}",
+                "Children": [],
+                "RemoteSources": [
+                  "1"
+                ]
+              }
+            ]
+          },
+          "SubStages": [
+            {
+              "StageId": 1,
+              "State": "FINISHED",
+              "OutputBytes": 1632,
+              "OutputRows": 19,
+              "InputBytes": 1632,
+              "InputRows": 19,
+              "ExecutionTime": 1898,
+              "QueryStagePlan": {
+                "Name": "LocalMerge",
+                "Identifier": "{\"orderBy\":\"[category ASC NULLS FIRST]\"}",
+                "Children": [
+                  {
+                    "Name": "PartialSort",
+                    "Identifier": "{\"orderBy\":\"[category ASC NULLS FIRST]\"}",
+                    "Children": [
+                      {
+                        "Name": "RemoteSource",
+                        "Identifier": "{\"sourceFragmentIds\":\"[2]\"}",
+                        "Children": [],
+                        "RemoteSources": [
+                          "2"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "SubStages": [
+                {
+                  "StageId": 2,
+                  "State": "FINISHED",
+                  "OutputBytes": 1632,
+                  "OutputRows": 19,
+                  "InputBytes": 2392,
+                  "InputRows": 19,
+                  "ExecutionTime": 2898,
+                  "QueryStagePlan": {
+                    "Name": "Aggregate",
+                    "Identifier": "{\"type\":\"FINAL\",\"keys\":\"[category]\",\"hash\":\"[]\"}",
+                    "Children": [
+                      {
+                        "Name": "LocalExchange",
+                        "Identifier": "{\"partitioning\":\"HASH\",\"isReplicateNullsAndAny\":\"\",\"hashColumn\":\"[]\",\"arguments\":\"[\\\"category\\\"]\"}",
+                        "Children": [
+                          {
+                            "Name": "RemoteSource",
+                            "Identifier": "{\"sourceFragmentIds\":\"[3]\"}",
+                            "Children": [],
+                            "RemoteSources": [
+                              "3"
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "SubStages": [
+                    {
+                      "StageId": 3,
+                      "State": "FINISHED",
+                      "OutputBytes": 2696,
+                      "OutputRows": 19,
+                      "InputBytes": 58987605,
+                      "InputRows": 302939,
+                      "ExecutionTime": 6810,
+                      "QueryStagePlan": {
+                        "Name": "Aggregate",
+                        "Identifier": "{\"type\":\"PARTIAL\",\"keys\":\"[category]\",\"hash\":\"[]\"}",
+                        "Children": [
+                          {
+                            "Name": "ScanProject",
+                            "Identifier": "{\"table\":\"awsdatacatalog$iceberg-aws:oliveyoung_db.oliveyoung_silver_history$data@7648899446181468433\",\"projectLocality\":\"LOCAL\",\"protectedBarrier\":\"NONE\"}",
+                            "Children": []
+                          }
+                        ]
+                      },
+                      "SubStages": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "api_calls": {
+        "start_query_execution": 1,
+        "get_query_execution": 3,
+        "get_query_results": 1,
+        "get_query_runtime_statistics": 1
+      }
+    },
+    {
+      "label": "after_2",
+      "query_id": "f0c72aca-62ad-4d98-bfbe-0c94210a3ceb",
+      "sql": "SELECT category, count(*) AS rows,\n            sum(length(product_id)) AS product_id_chars,\n            sum(length(product_name)) AS product_name_chars,\n            sum(cardinality(product_ingredients)) AS ingredients,\n            sum(review_count) AS reviews, min(batch_date) AS first_batch,\n            max(batch_date) AS last_batch\n            FROM \"oliveyoung_db\".\"oliveyoung_silver_history\"\n            GROUP BY category ORDER BY category NULLS FIRST",
+      "execution": {
+        "QueryExecutionId": "f0c72aca-62ad-4d98-bfbe-0c94210a3ceb",
+        "Query": "SELECT category, count(*) AS rows,\n            sum(length(product_id)) AS product_id_chars,\n            sum(length(product_name)) AS product_name_chars,\n            sum(cardinality(product_ingredients)) AS ingredients,\n            sum(review_count) AS reviews, min(batch_date) AS first_batch,\n            max(batch_date) AS last_batch\n            FROM \"oliveyoung_db\".\"oliveyoung_silver_history\"\n            GROUP BY category ORDER BY category NULLS FIRST",
+        "StatementType": "DML",
+        "ResultConfiguration": {
+          "OutputLocation": "s3://oliveyoung-crawl-data/athena-results/f0c72aca-62ad-4d98-bfbe-0c94210a3ceb.csv"
+        },
+        "ResultReuseConfiguration": {
+          "ResultReuseByAgeConfiguration": {
+            "Enabled": false
+          }
+        },
+        "QueryExecutionContext": {
+          "Database": "oliveyoung_db",
+          "Catalog": "awsdatacatalog"
+        },
+        "Status": {
+          "State": "SUCCEEDED",
+          "SubmissionDateTime": "2026-11-03 04:52:04.495000+00:00",
+          "CompletionDateTime": "2026-11-03 04:52:06.136000+00:00"
+        },
+        "Statistics": {
+          "EngineExecutionTimeInMillis": 1487,
+          "DataScannedInBytes": 7981509,
+          "TotalExecutionTimeInMillis": 1641,
+          "QueryQueueTimeInMillis": 72,
+          "ServicePreProcessingTimeInMillis": 56,
+          "QueryPlanningTimeInMillis": 197,
+          "ServiceProcessingTimeInMillis": 26,
+          "ResultReuseInformation": {
+            "ReusedPreviousResult": false
+          }
+        },
+        "WorkGroup": "oliveyoung-ops",
+        "EngineVersion": {
+          "SelectedEngineVersion": "Athena engine version 3",
+          "EffectiveEngineVersion": "Athena engine version 3"
+        },
+        "SubstatementType": "SELECT"
+      },
+      "client_wall_seconds": 2.181305675301701,
+      "result_sha256": "9b93246966d2e21a0f56c1516929461807b92ad55cfdc13f194d1038b1d2a54e",
+      "runtime_statistics": {
+        "Timeline": {
+          "QueryQueueTimeInMillis": 72,
+          "ServicePreProcessingTimeInMillis": 56,
+          "QueryPlanningTimeInMillis": 197,
+          "EngineExecutionTimeInMillis": 1487,
+          "ServiceProcessingTimeInMillis": 26,
+          "TotalExecutionTimeInMillis": 1641
+        },
+        "Rows": {
+          "InputRows": 302939,
+          "InputBytes": 58987605,
+          "OutputBytes": 1632,
+          "OutputRows": 19
+        },
+        "OutputStage": {
+          "StageId": 0,
+          "State": "FINISHED",
+          "OutputBytes": 1632,
+          "OutputRows": 19,
+          "InputBytes": 1632,
+          "InputRows": 19,
+          "ExecutionTime": 786,
+          "QueryStagePlan": {
+            "Name": "Output",
+            "Identifier": "{\"columnNames\":\"[category, rows, product_id_chars, product_name_chars, ingredients, reviews, first_batch, last_batch]\"}",
+            "Children": [
+              {
+                "Name": "RemoteMerge",
+                "Identifier": "{\"sourceFragmentIds\":\"[1]\"}",
+                "Children": [],
+                "RemoteSources": [
+                  "1"
+                ]
+              }
+            ]
+          },
+          "SubStages": [
+            {
+              "StageId": 1,
+              "State": "FINISHED",
+              "OutputBytes": 1632,
+              "OutputRows": 19,
+              "InputBytes": 1632,
+              "InputRows": 19,
+              "ExecutionTime": 3917,
+              "QueryStagePlan": {
+                "Name": "LocalMerge",
+                "Identifier": "{\"orderBy\":\"[category ASC NULLS FIRST]\"}",
+                "Children": [
+                  {
+                    "Name": "PartialSort",
+                    "Identifier": "{\"orderBy\":\"[category ASC NULLS FIRST]\"}",
+                    "Children": [
+                      {
+                        "Name": "RemoteSource",
+                        "Identifier": "{\"sourceFragmentIds\":\"[2]\"}",
+                        "Children": [],
+                        "RemoteSources": [
+                          "2"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "SubStages": [
+                {
+                  "StageId": 2,
+                  "State": "FINISHED",
+                  "OutputBytes": 1632,
+                  "OutputRows": 19,
+                  "InputBytes": 2392,
+                  "InputRows": 19,
+                  "ExecutionTime": 6030,
+                  "QueryStagePlan": {
+                    "Name": "Aggregate",
+                    "Identifier": "{\"type\":\"FINAL\",\"keys\":\"[category]\",\"hash\":\"[]\"}",
+                    "Children": [
+                      {
+                        "Name": "LocalExchange",
+                        "Identifier": "{\"partitioning\":\"HASH\",\"isReplicateNullsAndAny\":\"\",\"hashColumn\":\"[]\",\"arguments\":\"[\\\"category\\\"]\"}",
+                        "Children": [
+                          {
+                            "Name": "RemoteSource",
+                            "Identifier": "{\"sourceFragmentIds\":\"[3]\"}",
+                            "Children": [],
+                            "RemoteSources": [
+                              "3"
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "SubStages": [
+                    {
+                      "StageId": 3,
+                      "State": "FINISHED",
+                      "OutputBytes": 2696,
+                      "OutputRows": 19,
+                      "InputBytes": 58987605,
+                      "InputRows": 302939,
+                      "ExecutionTime": 13200,
+                      "QueryStagePlan": {
+                        "Name": "Aggregate",
+                        "Identifier": "{\"type\":\"PARTIAL\",\"keys\":\"[category]\",\"hash\":\"[]\"}",
+                        "Children": [
+                          {
+                            "Name": "ScanProject",
+                            "Identifier": "{\"table\":\"awsdatacatalog$iceberg-aws:oliveyoung_db.oliveyoung_silver_history$data@7648899446181468433\",\"projectLocality\":\"LOCAL\",\"protectedBarrier\":\"NONE\"}",
+                            "Children": []
+                          }
+                        ]
+                      },
+                      "SubStages": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "api_calls": {
+        "start_query_execution": 1,
+        "get_query_execution": 3,
+        "get_query_results": 1,
+        "get_query_runtime_statistics": 1
+      }
+    },
+    {
+      "label": "after_3",
+      "query_id": "d1fb21ed-dcbe-41a2-907f-3cf024aa8226",
+      "sql": "SELECT category, count(*) AS rows,\n            sum(length(product_id)) AS product_id_chars,\n            sum(length(product_name)) AS product_name_chars,\n            sum(cardinality(product_ingredients)) AS ingredients,\n            sum(review_count) AS reviews, min(batch_date) AS first_batch,\n            max(batch_date) AS last_batch\n            FROM \"oliveyoung_db\".\"oliveyoung_silver_history\"\n            GROUP BY category ORDER BY category NULLS FIRST",
+      "execution": {
+        "QueryExecutionId": "d1fb21ed-dcbe-41a2-907f-3cf024aa8226",
+        "Query": "SELECT category, count(*) AS rows,\n            sum(length(product_id)) AS product_id_chars,\n            sum(length(product_name)) AS product_name_chars,\n            sum(cardinality(product_ingredients)) AS ingredients,\n            sum(review_count) AS reviews, min(batch_date) AS first_batch,\n            max(batch_date) AS last_batch\n            FROM \"oliveyoung_db\".\"oliveyoung_silver_history\"\n            GROUP BY category ORDER BY category NULLS FIRST",
+        "StatementType": "DML",
+        "ResultConfiguration": {
+          "OutputLocation": "s3://oliveyoung-crawl-data/athena-results/d1fb21ed-dcbe-41a2-907f-3cf024aa8226.csv"
+        },
+        "ResultReuseConfiguration": {
+          "ResultReuseByAgeConfiguration": {
+            "Enabled": false
+          }
+        },
+        "QueryExecutionContext": {
+          "Database": "oliveyoung_db",
+          "Catalog": "awsdatacatalog"
+        },
+        "Status": {
+          "State": "SUCCEEDED",
+          "SubmissionDateTime": "2026-11-03 04:52:06.858000+00:00",
+          "CompletionDateTime": "2026-11-03 04:52:07.825000+00:00"
+        },
+        "Statistics": {
+          "EngineExecutionTimeInMillis": 841,
+          "DataScannedInBytes": 7981509,
+          "TotalExecutionTimeInMillis": 967,
+          "QueryQueueTimeInMillis": 55,
+          "ServicePreProcessingTimeInMillis": 41,
+          "QueryPlanningTimeInMillis": 150,
+          "ServiceProcessingTimeInMillis": 30,
+          "ResultReuseInformation": {
+            "ReusedPreviousResult": false
+          }
+        },
+        "WorkGroup": "oliveyoung-ops",
+        "EngineVersion": {
+          "SelectedEngineVersion": "Athena engine version 3",
+          "EffectiveEngineVersion": "Athena engine version 3"
+        },
+        "SubstatementType": "SELECT"
+      },
+      "client_wall_seconds": 1.1646239180117846,
+      "result_sha256": "9b93246966d2e21a0f56c1516929461807b92ad55cfdc13f194d1038b1d2a54e",
+      "runtime_statistics": {
+        "Timeline": {
+          "QueryQueueTimeInMillis": 55,
+          "ServicePreProcessingTimeInMillis": 41,
+          "QueryPlanningTimeInMillis": 150,
+          "EngineExecutionTimeInMillis": 841,
+          "ServiceProcessingTimeInMillis": 30,
+          "TotalExecutionTimeInMillis": 967
+        },
+        "Rows": {
+          "InputRows": 302939,
+          "InputBytes": 58987605,
+          "OutputBytes": 1632,
+          "OutputRows": 19
+        },
+        "OutputStage": {
+          "StageId": 0,
+          "State": "FINISHED",
+          "OutputBytes": 1632,
+          "OutputRows": 19,
+          "InputBytes": 1632,
+          "InputRows": 19,
+          "ExecutionTime": 209,
+          "QueryStagePlan": {
+            "Name": "Output",
+            "Identifier": "{\"columnNames\":\"[category, rows, product_id_chars, product_name_chars, ingredients, reviews, first_batch, last_batch]\"}",
+            "Children": [
+              {
+                "Name": "RemoteMerge",
+                "Identifier": "{\"sourceFragmentIds\":\"[1]\"}",
+                "Children": [],
+                "RemoteSources": [
+                  "1"
+                ]
+              }
+            ]
+          },
+          "SubStages": [
+            {
+              "StageId": 1,
+              "State": "FINISHED",
+              "OutputBytes": 1632,
+              "OutputRows": 19,
+              "InputBytes": 1632,
+              "InputRows": 19,
+              "ExecutionTime": 1041,
+              "QueryStagePlan": {
+                "Name": "LocalMerge",
+                "Identifier": "{\"orderBy\":\"[category ASC NULLS FIRST]\"}",
+                "Children": [
+                  {
+                    "Name": "PartialSort",
+                    "Identifier": "{\"orderBy\":\"[category ASC NULLS FIRST]\"}",
+                    "Children": [
+                      {
+                        "Name": "RemoteSource",
+                        "Identifier": "{\"sourceFragmentIds\":\"[2]\"}",
+                        "Children": [],
+                        "RemoteSources": [
+                          "2"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "SubStages": [
+                {
+                  "StageId": 2,
+                  "State": "FINISHED",
+                  "OutputBytes": 1632,
+                  "OutputRows": 19,
+                  "InputBytes": 2392,
+                  "InputRows": 19,
+                  "ExecutionTime": 1483,
+                  "QueryStagePlan": {
+                    "Name": "Aggregate",
+                    "Identifier": "{\"type\":\"FINAL\",\"keys\":\"[category]\",\"hash\":\"[]\"}",
+                    "Children": [
+                      {
+                        "Name": "LocalExchange",
+                        "Identifier": "{\"partitioning\":\"HASH\",\"isReplicateNullsAndAny\":\"\",\"hashColumn\":\"[]\",\"arguments\":\"[\\\"category\\\"]\"}",
+                        "Children": [
+                          {
+                            "Name": "RemoteSource",
+                            "Identifier": "{\"sourceFragmentIds\":\"[3]\"}",
+                            "Children": [],
+                            "RemoteSources": [
+                              "3"
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "SubStages": [
+                    {
+                      "StageId": 3,
+                      "State": "FINISHED",
+                      "OutputBytes": 2696,
+                      "OutputRows": 19,
+                      "InputBytes": 58987605,
+                      "InputRows": 302939,
+                      "ExecutionTime": 3170,
+                      "QueryStagePlan": {
+                        "Name": "Aggregate",
+                        "Identifier": "{\"type\":\"PARTIAL\",\"keys\":\"[category]\",\"hash\":\"[]\"}",
+                        "Children": [
+                          {
+                            "Name": "ScanProject",
+                            "Identifier": "{\"table\":\"awsdatacatalog$iceberg-aws:oliveyoung_db.oliveyoung_silver_history$data@7648899446181468433\",\"projectLocality\":\"LOCAL\",\"protectedBarrier\":\"NONE\"}",
+                            "Children": []
+                          }
+                        ]
+                      },
+                      "SubStages": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "api_calls": {
+        "start_query_execution": 1,
+        "get_query_execution": 2,
+        "get_query_results": 1,
+        "get_query_runtime_statistics": 1
+      }
+    }
+  ],
+  "metric_windows": {
+    "before": {
+      "start": "2026-11-03T04:47:00+00:00",
+      "end": "2026-11-03T04:48:00+00:00",
+      "datapoints": [
+        {
+          "Timestamp": "2026-11-03 04:47:00+00:00",
+          "Sum": 6269.0,
+          "Unit": "Count"
+        }
+      ],
+      "expected_minutes": 1,
+      "complete_minutes": true,
+      "get_requests_sum": 6269.0
+    },
+    "after": {
+      "start": "2026-11-03T04:52:00+00:00",
+      "end": "2026-11-03T04:53:00+00:00",
+      "datapoints": [
+        {
+          "Timestamp": "2026-11-03 04:52:00+00:00",
+          "Sum": 939.0,
+          "Unit": "Count"
+        }
+      ],
+      "expected_minutes": 1,
+      "complete_minutes": true,
+      "get_requests_sum": 939.0
+    }
+  },
+  "s3_get_requests": {
+    "before": 6269.0,
+    "after": 939.0
+  },
+  "s3_get_requests_note": "CloudWatch best-effort prefix totals during isolated measurement minutes; not query-attributed. Other readers of this prefix may contribute. Warmups, layout queries and OPTIMIZE run outside these windows.",
+  "query": "SELECT category, count(*) AS rows,\n            sum(length(product_id)) AS product_id_chars,\n            sum(length(product_name)) AS product_name_chars,\n            sum(cardinality(product_ingredients)) AS ingredients,\n            sum(review_count) AS reviews, min(batch_date) AS first_batch,\n            max(batch_date) AS last_batch\n            FROM \"oliveyoung_db\".\"oliveyoung_silver_history\"\n            GROUP BY category ORDER BY category NULLS FIRST",
+  "metrics_configuration": {
+    "Id": "SilverHistoryMetrics",
+    "Filter": {
+      "Prefix": "silver/history/"
+    }
+  },
+  "metrics_ready_at": "2026-11-03T04:46:32.500385+00:00",
+  "api_calls_total": {
+    "start_query_execution": 12,
+    "sdk_retries": 0,
+    "get_query_execution": 46,
+    "get_query_results": 11,
+    "get_query_runtime_statistics": 11
+  },
+  "layout_before": [
+    {
+      "Data": [
+        {
+          "VarCharValue": "files"
+        },
+        {
+          "VarCharValue": "bytes"
+        },
+        {
+          "VarCharValue": "records"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "VarCharValue": "1722"
+        },
+        {
+          "VarCharValue": "141573089"
+        },
+        {
+          "VarCharValue": "302939"
+        }
+      ]
+    }
+  ],
+  "layout_after": [
+    {
+      "Data": [
+        {
+          "VarCharValue": "files"
+        },
+        {
+          "VarCharValue": "bytes"
+        },
+        {
+          "VarCharValue": "records"
+        }
+      ]
+    },
+    {
+      "Data": [
+        {
+          "VarCharValue": "19"
+        },
+        {
+          "VarCharValue": "12234394"
+        },
+        {
+          "VarCharValue": "302939"
+        }
+      ]
+    }
+  ],
+  "aggregate_results_match": true
+}
