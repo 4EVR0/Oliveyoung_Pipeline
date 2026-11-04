@@ -1,0 +1,1083 @@
+{
+  "at_utc": "2026-11-04T10:36:08.102465+00:00",
+  "table": "oliveyoung_db.oliveyoung_silver_history",
+  "snapshot_id": 7648899446181468433,
+  "properties": {},
+  "sort_order": "[\n  14 ASC NULLS LAST\n]",
+  "partition_spec": "[\n  1000: category: identity(1)\n]",
+  "pyarrow_version": "24.0.0",
+  "active_files": 19,
+  "active_bytes": 12234394,
+  "rows": 302939,
+  "size_min": 39736,
+  "size_p50": 264666.0,
+  "size_p95": 2219728.7999999993,
+  "size_max": 2423037,
+  "files_under_1MiB": 14,
+  "files_per_category": {
+    "로션": 1,
+    "클렌징폼": 1,
+    "토너": 1,
+    "기타": 1,
+    "클렌징밀크": 1,
+    "미스트": 1,
+    "스킨": 1,
+    "클렌징워터": 1,
+    "필링스크럽": 1,
+    "에센스": 1,
+    "세럼": 1,
+    "클렌징밤": 1,
+    "앰플": 1,
+    "크림": 1,
+    "클렌징젤": 1,
+    "페이스오일": 1,
+    "올인원": 1,
+    "클렌징오일": 1,
+    "fallback": 1
+  },
+  "row_groups": 19,
+  "product_id_ndv": 4530,
+  "batch_date_ndv": 101,
+  "batch_date_days": 65,
+  "files": [
+    {
+      "index": 0,
+      "bytes": 512832,
+      "rows": 12580,
+      "category": "로션",
+      "row_groups": 1,
+      "product_id_ndv": 173,
+      "batch_date_min": "2026-04-09 13:27:04.429058+00:00",
+      "batch_date_max": "2026-11-01 00:00:00+00:00",
+      "batch_date_monotonic": false,
+      "crawled_at_monotonic": true,
+      "iceberg_bound_field_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16,
+        22,
+        23
+      ],
+      "page_indexes": [
+        {
+          "row_group": 0,
+          "column": "product_id",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "crawled_at",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "batch_date",
+          "has_column_index": false,
+          "has_offset_index": false
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "bytes": 1367967,
+      "rows": 34745,
+      "category": "클렌징폼",
+      "row_groups": 1,
+      "product_id_ndv": 550,
+      "batch_date_min": "2026-04-09 13:27:04.429058+00:00",
+      "batch_date_max": "2026-11-01 00:00:00+00:00",
+      "batch_date_monotonic": false,
+      "crawled_at_monotonic": true,
+      "iceberg_bound_field_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16,
+        22,
+        23
+      ],
+      "page_indexes": [
+        {
+          "row_group": 0,
+          "column": "product_id",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "crawled_at",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "batch_date",
+          "has_column_index": false,
+          "has_offset_index": false
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "bytes": 1070084,
+      "rows": 27000,
+      "category": "토너",
+      "row_groups": 1,
+      "product_id_ndv": 367,
+      "batch_date_min": "2026-04-09 13:27:04.429058+00:00",
+      "batch_date_max": "2026-11-01 00:00:00+00:00",
+      "batch_date_monotonic": false,
+      "crawled_at_monotonic": true,
+      "iceberg_bound_field_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16,
+        22,
+        23
+      ],
+      "page_indexes": [
+        {
+          "row_group": 0,
+          "column": "product_id",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "crawled_at",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "batch_date",
+          "has_column_index": false,
+          "has_offset_index": false
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "bytes": 2423037,
+      "rows": 47604,
+      "category": "기타",
+      "row_groups": 1,
+      "product_id_ndv": 958,
+      "batch_date_min": "2026-06-15 05:52:01.987423+00:00",
+      "batch_date_max": "2026-11-01 00:00:00+00:00",
+      "batch_date_monotonic": false,
+      "crawled_at_monotonic": true,
+      "iceberg_bound_field_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16,
+        22,
+        23
+      ],
+      "page_indexes": [
+        {
+          "row_group": 0,
+          "column": "product_id",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "crawled_at",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "batch_date",
+          "has_column_index": false,
+          "has_offset_index": false
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "bytes": 89220,
+      "rows": 2879,
+      "category": "클렌징밀크",
+      "row_groups": 1,
+      "product_id_ndv": 58,
+      "batch_date_min": "2026-04-09 13:27:04.429058+00:00",
+      "batch_date_max": "2026-11-01 00:00:00+00:00",
+      "batch_date_monotonic": false,
+      "crawled_at_monotonic": true,
+      "iceberg_bound_field_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16,
+        22,
+        23
+      ],
+      "page_indexes": [
+        {
+          "row_group": 0,
+          "column": "product_id",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "crawled_at",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "batch_date",
+          "has_column_index": false,
+          "has_offset_index": false
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "bytes": 264666,
+      "rows": 8954,
+      "category": "미스트",
+      "row_groups": 1,
+      "product_id_ndv": 150,
+      "batch_date_min": "2026-04-09 13:27:04.429058+00:00",
+      "batch_date_max": "2026-11-01 00:00:00+00:00",
+      "batch_date_monotonic": false,
+      "crawled_at_monotonic": true,
+      "iceberg_bound_field_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16,
+        22,
+        23
+      ],
+      "page_indexes": [
+        {
+          "row_group": 0,
+          "column": "product_id",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "crawled_at",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "batch_date",
+          "has_column_index": false,
+          "has_offset_index": false
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "bytes": 39736,
+      "rows": 381,
+      "category": "스킨",
+      "row_groups": 1,
+      "product_id_ndv": 60,
+      "batch_date_min": "2026-04-09 13:27:04.429058+00:00",
+      "batch_date_max": "2026-04-09 14:28:19.413858+00:00",
+      "batch_date_monotonic": false,
+      "crawled_at_monotonic": true,
+      "iceberg_bound_field_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16
+      ],
+      "page_indexes": [
+        {
+          "row_group": 0,
+          "column": "product_id",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "crawled_at",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "batch_date",
+          "has_column_index": false,
+          "has_offset_index": false
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "bytes": 108852,
+      "rows": 4615,
+      "category": "클렌징워터",
+      "row_groups": 1,
+      "product_id_ndv": 83,
+      "batch_date_min": "2026-04-09 13:27:04.429058+00:00",
+      "batch_date_max": "2026-11-01 00:00:00+00:00",
+      "batch_date_monotonic": false,
+      "crawled_at_monotonic": true,
+      "iceberg_bound_field_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16,
+        22,
+        23
+      ],
+      "page_indexes": [
+        {
+          "row_group": 0,
+          "column": "product_id",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "crawled_at",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "batch_date",
+          "has_column_index": false,
+          "has_offset_index": false
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "bytes": 190834,
+      "rows": 8157,
+      "category": "필링스크럽",
+      "row_groups": 1,
+      "product_id_ndv": 113,
+      "batch_date_min": "2026-04-09 13:27:04.429058+00:00",
+      "batch_date_max": "2026-11-01 00:00:00+00:00",
+      "batch_date_monotonic": false,
+      "crawled_at_monotonic": true,
+      "iceberg_bound_field_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16,
+        22,
+        23
+      ],
+      "page_indexes": [
+        {
+          "row_group": 0,
+          "column": "product_id",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "crawled_at",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "batch_date",
+          "has_column_index": false,
+          "has_offset_index": false
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "bytes": 447110,
+      "rows": 12201,
+      "category": "에센스",
+      "row_groups": 1,
+      "product_id_ndv": 221,
+      "batch_date_min": "2026-04-09 13:27:04.429058+00:00",
+      "batch_date_max": "2026-11-01 00:00:00+00:00",
+      "batch_date_monotonic": false,
+      "crawled_at_monotonic": true,
+      "iceberg_bound_field_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16,
+        22,
+        23
+      ],
+      "page_indexes": [
+        {
+          "row_group": 0,
+          "column": "product_id",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "crawled_at",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "batch_date",
+          "has_column_index": false,
+          "has_offset_index": false
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "bytes": 1584139,
+      "rows": 32580,
+      "category": "세럼",
+      "row_groups": 1,
+      "product_id_ndv": 494,
+      "batch_date_min": "2026-04-09 13:27:04.429058+00:00",
+      "batch_date_max": "2026-11-01 00:00:00+00:00",
+      "batch_date_monotonic": false,
+      "crawled_at_monotonic": true,
+      "iceberg_bound_field_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16,
+        22,
+        23
+      ],
+      "page_indexes": [
+        {
+          "row_group": 0,
+          "column": "product_id",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "crawled_at",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "batch_date",
+          "has_column_index": false,
+          "has_offset_index": false
+        }
+      ]
+    },
+    {
+      "index": 11,
+      "bytes": 136008,
+      "rows": 6502,
+      "category": "클렌징밤",
+      "row_groups": 1,
+      "product_id_ndv": 104,
+      "batch_date_min": "2026-04-09 13:27:04.429058+00:00",
+      "batch_date_max": "2026-11-01 00:00:00+00:00",
+      "batch_date_monotonic": false,
+      "crawled_at_monotonic": true,
+      "iceberg_bound_field_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16,
+        22,
+        23
+      ],
+      "page_indexes": [
+        {
+          "row_group": 0,
+          "column": "product_id",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "crawled_at",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "batch_date",
+          "has_column_index": false,
+          "has_offset_index": false
+        }
+      ]
+    },
+    {
+      "index": 12,
+      "bytes": 913394,
+      "rows": 19087,
+      "category": "앰플",
+      "row_groups": 1,
+      "product_id_ndv": 255,
+      "batch_date_min": "2026-04-09 13:27:04.429058+00:00",
+      "batch_date_max": "2026-11-01 00:00:00+00:00",
+      "batch_date_monotonic": false,
+      "crawled_at_monotonic": true,
+      "iceberg_bound_field_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16,
+        22,
+        23
+      ],
+      "page_indexes": [
+        {
+          "row_group": 0,
+          "column": "product_id",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "crawled_at",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "batch_date",
+          "has_column_index": false,
+          "has_offset_index": false
+        }
+      ]
+    },
+    {
+      "index": 13,
+      "bytes": 2197139,
+      "rows": 57056,
+      "category": "크림",
+      "row_groups": 1,
+      "product_id_ndv": 801,
+      "batch_date_min": "2026-04-09 13:27:04.429058+00:00",
+      "batch_date_max": "2026-11-01 00:00:00+00:00",
+      "batch_date_monotonic": false,
+      "crawled_at_monotonic": true,
+      "iceberg_bound_field_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16,
+        22,
+        23
+      ],
+      "page_indexes": [
+        {
+          "row_group": 0,
+          "column": "product_id",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "crawled_at",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "batch_date",
+          "has_column_index": false,
+          "has_offset_index": false
+        }
+      ]
+    },
+    {
+      "index": 14,
+      "bytes": 156955,
+      "rows": 6076,
+      "category": "클렌징젤",
+      "row_groups": 1,
+      "product_id_ndv": 104,
+      "batch_date_min": "2026-04-09 13:27:04.429058+00:00",
+      "batch_date_max": "2026-11-01 00:00:00+00:00",
+      "batch_date_monotonic": false,
+      "crawled_at_monotonic": true,
+      "iceberg_bound_field_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16,
+        22,
+        23
+      ],
+      "page_indexes": [
+        {
+          "row_group": 0,
+          "column": "product_id",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "crawled_at",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "batch_date",
+          "has_column_index": false,
+          "has_offset_index": false
+        }
+      ]
+    },
+    {
+      "index": 15,
+      "bytes": 43311,
+      "rows": 1422,
+      "category": "페이스오일",
+      "row_groups": 1,
+      "product_id_ndv": 34,
+      "batch_date_min": "2026-04-09 13:27:04.429058+00:00",
+      "batch_date_max": "2026-11-01 00:00:00+00:00",
+      "batch_date_monotonic": false,
+      "crawled_at_monotonic": true,
+      "iceberg_bound_field_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16,
+        22,
+        23
+      ],
+      "page_indexes": [
+        {
+          "row_group": 0,
+          "column": "product_id",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "crawled_at",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "batch_date",
+          "has_column_index": false,
+          "has_offset_index": false
+        }
+      ]
+    },
+    {
+      "index": 16,
+      "bytes": 317949,
+      "rows": 9613,
+      "category": "올인원",
+      "row_groups": 1,
+      "product_id_ndv": 118,
+      "batch_date_min": "2026-04-09 13:27:04.429058+00:00",
+      "batch_date_max": "2026-11-01 00:00:00+00:00",
+      "batch_date_monotonic": false,
+      "crawled_at_monotonic": true,
+      "iceberg_bound_field_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16,
+        22,
+        23
+      ],
+      "page_indexes": [
+        {
+          "row_group": 0,
+          "column": "product_id",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "crawled_at",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "batch_date",
+          "has_column_index": false,
+          "has_offset_index": false
+        }
+      ]
+    },
+    {
+      "index": 17,
+      "bytes": 254341,
+      "rows": 11207,
+      "category": "클렌징오일",
+      "row_groups": 1,
+      "product_id_ndv": 192,
+      "batch_date_min": "2026-04-09 13:27:04.429058+00:00",
+      "batch_date_max": "2026-11-01 00:00:00+00:00",
+      "batch_date_monotonic": false,
+      "crawled_at_monotonic": true,
+      "iceberg_bound_field_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16,
+        22,
+        23
+      ],
+      "page_indexes": [
+        {
+          "row_group": 0,
+          "column": "product_id",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "crawled_at",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "batch_date",
+          "has_column_index": false,
+          "has_offset_index": false
+        }
+      ]
+    },
+    {
+      "index": 18,
+      "bytes": 116820,
+      "rows": 280,
+      "category": "fallback",
+      "row_groups": 1,
+      "product_id_ndv": 280,
+      "batch_date_min": "2026-04-10 04:58:03.085483+00:00",
+      "batch_date_max": "2026-04-10 04:58:03.085483+00:00",
+      "batch_date_monotonic": true,
+      "crawled_at_monotonic": false,
+      "iceberg_bound_field_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16
+      ],
+      "page_indexes": [
+        {
+          "row_group": 0,
+          "column": "product_id",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "crawled_at",
+          "has_column_index": false,
+          "has_offset_index": false
+        },
+        {
+          "row_group": 0,
+          "column": "batch_date",
+          "has_column_index": false,
+          "has_offset_index": false
+        }
+      ]
+    }
+  ],
+  "representative_predicates": [
+    {
+      "label": "product_id = 0004f92b-7aae-511e-8444-130d1b9fb02f",
+      "iceberg_candidate_files": 1,
+      "iceberg_candidate_file_bytes": 512832,
+      "actual_matching_files": 1,
+      "actual_matching_rows": 1,
+      "row_selectivity": 3.3009945896698675e-06,
+      "row_groups_minmax_candidates": 1,
+      "row_groups_with_matches": 1
+    },
+    {
+      "label": "product_id = 42a6ed45-449e-5b14-b8b3-da1681ce8507",
+      "iceberg_candidate_files": 19,
+      "iceberg_candidate_file_bytes": 12234394,
+      "actual_matching_files": 1,
+      "actual_matching_rows": 46,
+      "row_selectivity": 0.0001518457511248139,
+      "row_groups_minmax_candidates": 19,
+      "row_groups_with_matches": 1
+    },
+    {
+      "label": "product_id = 81a94b37-542c-597e-b4cf-c8589852ecac",
+      "iceberg_candidate_files": 19,
+      "iceberg_candidate_file_bytes": 12234394,
+      "actual_matching_files": 1,
+      "actual_matching_rows": 92,
+      "row_selectivity": 0.0003036915022496278,
+      "row_groups_minmax_candidates": 19,
+      "row_groups_with_matches": 1
+    },
+    {
+      "label": "product_id = c03412d0-3a40-5ed7-913a-fbbb8cedf13e",
+      "iceberg_candidate_files": 19,
+      "iceberg_candidate_file_bytes": 12234394,
+      "actual_matching_files": 1,
+      "actual_matching_rows": 2,
+      "row_selectivity": 6.601989179339735e-06,
+      "row_groups_minmax_candidates": 19,
+      "row_groups_with_matches": 1
+    },
+    {
+      "label": "product_id = ffe83be9-8e33-53fb-b18b-b4188fd027ac",
+      "iceberg_candidate_files": 1,
+      "iceberg_candidate_file_bytes": 1070084,
+      "actual_matching_files": 1,
+      "actual_matching_rows": 92,
+      "row_selectivity": 0.0003036915022496278,
+      "row_groups_minmax_candidates": 1,
+      "row_groups_with_matches": 1
+    },
+    {
+      "label": "product_id = 81bba57c-7c6b-541a-896a-999fb9e92a4c~audit_missing",
+      "iceberg_candidate_files": 19,
+      "iceberg_candidate_file_bytes": 12234394,
+      "actual_matching_files": 0,
+      "actual_matching_rows": 0,
+      "row_selectivity": 0.0,
+      "row_groups_minmax_candidates": 19,
+      "row_groups_with_matches": 0
+    },
+    {
+      "label": "latest UTC day: 2026-11-01T00:00:00+00:00",
+      "iceberg_candidate_files": 17,
+      "iceberg_candidate_file_bytes": 12077838,
+      "actual_matching_files": 17,
+      "actual_matching_rows": 3408,
+      "row_selectivity": 0.011249789561594909,
+      "row_groups_minmax_candidates": 17,
+      "row_groups_with_matches": 17
+    },
+    {
+      "label": "category = 크림",
+      "iceberg_candidate_files": 1,
+      "iceberg_candidate_file_bytes": 2197139,
+      "actual_matching_files": 1,
+      "actual_matching_rows": 57056,
+      "row_selectivity": 0.18834154730820396,
+      "row_groups_minmax_candidates": 1,
+      "row_groups_with_matches": 1
+    },
+    {
+      "label": "category = 크림 AND latest UTC day",
+      "iceberg_candidate_files": 1,
+      "iceberg_candidate_file_bytes": 2197139,
+      "actual_matching_files": 1,
+      "actual_matching_rows": 558,
+      "row_selectivity": 0.001841954981035786,
+      "row_groups_minmax_candidates": 1,
+      "row_groups_with_matches": 1
+    }
+  ],
+  "scope": "PyIceberg file planning + Parquet min/max + exact matches in four read columns; not an Athena latency benchmark or Bloom implementation test."
+}
