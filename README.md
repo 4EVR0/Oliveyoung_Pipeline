@@ -1,5 +1,7 @@
 # Oliveyoung_Pipeline
 
+> 2026-11 운영 종료. S3·Glue·Neo4j 등 실행 환경은 철거했고, 문서는 운영 당시 기준이다.
+
 - 올리브영 크롤링 데이터를 Bronze → Silver → Gold 로 가공하는 ETL 파이프라인
 - 원시 제품 데이터에서 성분을 정규화·집계해 Apache Iceberg 테이블로 적재하고,
 변경분을 Neo4j 그래프에 증분 반영한다
@@ -207,3 +209,17 @@ Airflow UI에서 `source_run_id`를 넣고 `dry-run`을 먼저 실행해 manifes
 - 스토리지: AWS S3 / 메타스토어: AWS Glue Catalog / 리전: `ap-northeast-2`
 - 런타임: Python 3.12, EC2 (IAM Role 인증)
 - 주요 의존성: `pyiceberg`, `duckdb`, `pyahocorasick`, `pandas`/`pyarrow`, `boto3`, `neo4j`
+
+## 운영 기록
+
+2026-06 ~ 2026-11, Airflow(EC2)에서 운영.
+
+| 항목 | 값 |
+|---|---|
+| 정상 파이프라인 실행 | 72회 (2026-06-06 ~ 11-11) |
+| 그래프 노드 | 6,678 (Product 3,393 · Ingredient 3,221) |
+| 그래프 관계 | 119,799 (CONTAINS 112,966) |
+| 성분 매칭률 | 평상시 약 99.1% (95% 미만 알림) |
+| 누락 배치 백필 | 8~9월 7건. 입력 25,830건 → history 17,020행, 7건 모두 유형별 합계 일치 |
+| 재실행 멱등 | 같은 배치 정제 단계 2회 재실행 후에도 history 3,348행 · DQ 1 run 유지 |
+| 입력 선택 규칙 | 과거 재생 기준 데이터 나이 SLO(3크롤 이내) 달성률 96.1% (493/513) |
